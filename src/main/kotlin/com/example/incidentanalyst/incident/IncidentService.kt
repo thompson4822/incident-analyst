@@ -9,4 +9,9 @@ class IncidentService(
 
     fun listRecent(limit: Int = 50): List<Incident> =
         incidentRepository.findRecent(limit).map { it.toDomain() }
+
+    fun getById(id: IncidentId): IncidentResult =
+        incidentRepository.findById(id.value)?.toDomain()?.let { incident ->
+            IncidentResult.Success(incident)
+        } ?: IncidentResult.Failure(IncidentError.NotFound)
 }

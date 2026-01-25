@@ -8,3 +8,19 @@ data class IncidentResponseDto(
     val severity: String,
     val status: String
 )
+
+// Extension function to convert Incident domain model to DTO
+fun Incident.toResponseDto(): IncidentResponseDto =
+    IncidentResponseDto(
+        id = id.value,
+        source = source,
+        title = title,
+        description = description,
+        severity = severity.name,
+        status = when (status) {
+            is IncidentStatus.Open -> "OPEN"
+            is IncidentStatus.Acknowledged -> "ACK"
+            is IncidentStatus.Diagnosed -> "DIAGNOSED:${status.diagnosisId}"
+            is IncidentStatus.Resolved -> "RESOLVED"
+        }
+    )
