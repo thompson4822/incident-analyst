@@ -6,3 +6,17 @@ data class RunbookFragmentResponseDto(
     val content: String,
     val tags: String?
 )
+
+data class RunbookFragmentUpdateRequestDto(
+    val title: String,
+    val content: String,
+    val tags: String?
+)
+
+fun RunbookFragment.toResponseDto(): RunbookFragmentResponseDto =
+    RunbookFragmentResponseDto(
+        id = id.value,
+        title = title,
+        content = content,
+        tags = tags
+    )
