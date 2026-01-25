@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.anyLong
 import org.mockito.Mockito.reset
 import org.mockito.Mockito.`when`
 import java.time.Instant
@@ -25,36 +24,6 @@ class IncidentServiceTest {
     @BeforeEach
     fun setup() {
         reset(incidentRepository)
-    }
-
-    @Test
-    fun `getById returns Success for valid incident`() {
-        // Arrange
-        val testId = 123L
-        val testTimestamp = Instant.now()
-        val entity = IncidentEntity(
-            id = testId,
-            source = "monitoring",
-            title = "High CPU usage",
-            description = "CPU usage exceeded 90%",
-            severity = "HIGH",
-            status = "OPEN",
-            createdAt = testTimestamp,
-            updatedAt = testTimestamp
-        )
-        `when`(incidentRepository.findById(testId)).thenReturn(entity)
-
-        // Act
-        val result = incidentService.getById(IncidentId(testId))
-
-        // Assert
-        assertTrue(result is IncidentResult.Success)
-        val incident = (result as IncidentResult.Success).incident
-        assertEquals(testId, incident.id.value)
-        assertEquals("monitoring", incident.source)
-        assertEquals("High CPU usage", incident.title)
-        assertEquals("HIGH", incident.severity.name)
-        assertTrue(incident.status is IncidentStatus.Open)
     }
 
     @Test

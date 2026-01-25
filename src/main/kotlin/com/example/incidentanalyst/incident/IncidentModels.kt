@@ -63,3 +63,20 @@ fun IncidentEntity.toDomain(): Incident =
         createdAt = createdAt,
         updatedAt = updatedAt
     )
+
+fun Incident.toEntity(): IncidentEntity =
+    IncidentEntity(
+        id = if (id.value == 0L) null else id.value,
+        source = source,
+        title = title,
+        description = description,
+        severity = severity.name,
+        status = when (status) {
+            IncidentStatus.Open -> "OPEN"
+            IncidentStatus.Acknowledged -> "ACK"
+            IncidentStatus.Resolved -> "RESOLVED"
+            is IncidentStatus.Diagnosed -> "DIAGNOSED:${status.diagnosisId}"
+        },
+        createdAt = createdAt,
+        updatedAt = updatedAt
+    )

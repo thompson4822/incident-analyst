@@ -268,7 +268,7 @@ class IncidentModelsTest {
 
         severities.forEach { (severityString, severityEnum) ->
             val entity = IncidentEntity(
-                id = 1000L + severityEnum.ordinal,
+                id = 1000L + severityEnum.ordinal.toLong(),
                 source = "test",
                 title = "Severity test",
                 description = "Description",
@@ -467,6 +467,181 @@ class IncidentModelsTest {
 
         assertFalse(successHandled)
         assertTrue(failureHandled)
+    }
+
+    @Test
+    fun `toEntity maps Open status to OPEN`() {
+        // Arrange
+        val incident = Incident(
+            id = IncidentId(123L),
+            source = "monitoring",
+            title = "Test incident",
+            description = "Test description",
+            severity = Severity.HIGH,
+            status = IncidentStatus.Open,
+            createdAt = Instant.now(),
+            updatedAt = Instant.now()
+        )
+
+        // Act
+        val entity = incident.toEntity()
+
+        // Assert
+        assertEquals(123L, entity.id)
+        assertEquals("monitoring", entity.source)
+        assertEquals("Test incident", entity.title)
+        assertEquals("Test description", entity.description)
+        assertEquals("HIGH", entity.severity)
+        assertEquals("OPEN", entity.status)
+    }
+
+    @Test
+    fun `toEntity maps Acknowledged status to ACK`() {
+        // Arrange
+        val incident = Incident(
+            id = IncidentId(456L),
+            source = "alerting",
+            title = "Acknowledged incident",
+            description = "Description",
+            severity = Severity.MEDIUM,
+            status = IncidentStatus.Acknowledged,
+            createdAt = Instant.now(),
+            updatedAt = Instant.now()
+        )
+
+        // Act
+        val entity = incident.toEntity()
+
+        // Assert
+        assertEquals("ACK", entity.status)
+    }
+
+    @Test
+    fun `toEntity maps Resolved status to RESOLVED`() {
+        // Arrange
+        val incident = Incident(
+            id = IncidentId(789L),
+            source = "support",
+            title = "Resolved incident",
+            description = "Description",
+            severity = Severity.LOW,
+            status = IncidentStatus.Resolved,
+            createdAt = Instant.now(),
+            updatedAt = Instant.now()
+        )
+
+        // Act
+        val entity = incident.toEntity()
+
+        // Assert
+        assertEquals("RESOLVED", entity.status)
+    }
+
+    @Test
+    fun `toEntity maps Diagnosed status to DIAGNOSED with diagnosisId`() {
+        // Arrange
+        val diagnosisId = 456L
+        val incident = Incident(
+            id = IncidentId(321L),
+            source = "monitoring",
+            title = "Diagnosed incident",
+            description = "Description",
+            severity = Severity.CRITICAL,
+            status = IncidentStatus.Diagnosed(diagnosisId),
+            createdAt = Instant.now(),
+            updatedAt = Instant.now()
+        )
+
+        // Act
+        val entity = incident.toEntity()
+
+        // Assert
+        assertEquals("DIAGNOSED:$diagnosisId", entity.status)
+    }
+
+    @Test
+    fun `toEntity preserves all severity levels`() {
+        // Arrange
+        val severities = mapOf(
+            Severity.CRITICAL to "CRITICAL",
+            Severity.HIGH to "HIGH",
+            Severity.MEDIUM to "MEDIUM",
+            Severity.LOW to "LOW",
+            Severity.INFO to "INFO"
+        )
+
+        severities.forEach { (severityEnum, severityString) ->
+            val incident = Incident(
+                id = IncidentId(1000L + severityEnum.ordinal),
+                source = "test",
+                title = "Severity test",
+                description = "Description",
+                severity = severityEnum,
+                status = IncidentStatus.Open,
+                createdAt = Instant.now(),
+                updatedAt = Instant.now()
+            )
+
+            // Act
+            val entity = incident.toEntity()
+
+            // Assert
+            assertEquals(severityString, entity.severity)
+        }
+    }
+
+    @Test
+    fun `toEntity preserves timestamp fields`() {
+        // Arrange
+        val createdTime = Instant.now().minusSeconds(3600)
+        val updatedTime = Instant.now()
+        val incident = Incident(
+            id = IncidentId(888L),
+            source = "test",
+            title = "Timestamp test",
+            description = "Description",
+            severity = Severity.HIGH,
+            status = IncidentStatus.Open,
+            createdAt = createdTime,
+            updatedAt = updatedTime
+        )
+
+        // Act
+        val entity = incident.toEntity()
+
+        // Assert
+        assertEquals(createdTime, entity.createdAt)
+        assertEquals(updatedTime, entity.updatedAt)
+    }
+
+    @Test
+    fun `toEntity maps all incident fields correctly`() {
+        // Arrange
+        val createdTime = Instant.now().minusSeconds(7200)
+        val updatedTime = Instant.now()
+        val incident = Incident(
+            id = IncidentId(999L),
+            source = "custom-source",
+            title = "Custom Title",
+            description = "Custom Description",
+            severity = Severity.HIGH,
+            status = IncidentStatus.Open,
+            createdAt = createdTime,
+            updatedAt = updatedTime
+        )
+
+        // Act
+        val entity = incident.toEntity()
+
+        // Assert
+        assertEquals(999L, entity.id)
+        assertEquals("custom-source", entity.source)
+        assertEquals("Custom Title", entity.title)
+        assertEquals("Custom Description", entity.description)
+        assertEquals("HIGH", entity.severity)
+        assertEquals("OPEN", entity.status)
+        assertEquals(createdTime, entity.createdAt)
+        assertEquals(updatedTime, entity.updatedAt)
     }
 
     private fun assertFalse(condition: Boolean) {

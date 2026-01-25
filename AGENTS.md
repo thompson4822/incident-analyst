@@ -165,11 +165,24 @@ interface IncidentAnalystAgent {
 - Test classes follow the slice naming (e.g., `IncidentServiceTest`).
 - Prefer focused unit tests for mappings and ADTs.
 - Use Quarkus tests for repository/service integration with Flyway.
+- Separate integration tests into `*IntegrationTest` classes.
+  - Unit tests should use `@InjectMock` and Mockito.
+  - Integration tests should avoid `@InjectMock` and use real Panache repositories/DB.
+- Kotlin + Mockito matcher guidance:
+  - Avoid `any()` on non‑nullable parameters unless using Mockito‑Kotlin correctly.
+  - Prefer `Mockito.any(Foo::class.java)` or stub with a concrete object.
 
 Example (single‑test run):
 ```bash
 mvn -Dtest=IncidentServiceTest#mapsEntityToDomain test
 ```
+
+Example (single‑test run with spaces):
+```bash
+mvn -Dtest="CloudWatchIngestionServiceTest#ingestAlarms returns PersistenceError when incidentService create throws" test
+```
+
+Note: error logs in tests are expected when exercising failure‑path cases; treat them as failures only if tests fail.
 
 ## Files and locations
 - Kotlin main: `src/main/kotlin/com/example/incidentanalyst/...`

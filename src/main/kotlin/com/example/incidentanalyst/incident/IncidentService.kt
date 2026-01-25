@@ -1,6 +1,7 @@
 package com.example.incidentanalyst.incident
 
 import jakarta.enterprise.context.ApplicationScoped
+import jakarta.transaction.Transactional
 
 @ApplicationScoped
 class IncidentService(
@@ -14,4 +15,11 @@ class IncidentService(
         incidentRepository.findById(id.value)?.toDomain()?.let { incident ->
             IncidentResult.Success(incident)
         } ?: IncidentResult.Failure(IncidentError.NotFound)
+
+    @Transactional
+    fun create(incident: Incident): Incident {
+        val entity = incident.toEntity()
+        incidentRepository.persistAndFlush(entity)
+        return entity.toDomain()
+    }
 }
