@@ -25,9 +25,8 @@ Define data-oriented diagnosis models and endpoints for listing and verification
 - ✅ HTTP status code mapping: 200 (Success), 404 (NotFound), 500 (UpdateFailed), 400 (Invalid ID)
 - ✅ toResponseDto() extension function eliminates code duplication
 - ✅ DiagnosisError ADT expanded with NotFound and UpdateFailed cases
-- ✅ Comprehensive test suite: 64 tests passing across 4 test files
-- ✅ Tests cover service, repository, models, and DTO mappings
-- ⚠️ Note: 7 PUT endpoint tests in DiagnosisResourceTest have mocking issues due to @Transactional annotation (implementation is correct)
+- ✅ Comprehensive test suite: 85 tests passing across 5 test files
+- ✅ Tests cover service, repository, resource, models, and DTO mappings
 
 ## Dependencies
 - TICKET-002.

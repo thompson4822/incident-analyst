@@ -26,6 +26,7 @@ class DiagnosisResource(
         // Validate ID - reject negative or zero values
         if (id <= 0) {
             return Response.status(Response.Status.BAD_REQUEST)
+                .type(MediaType.APPLICATION_JSON)
                 .entity(mapOf("error" to "Diagnosis ID must be a positive number"))
                 .build()
         }
@@ -48,6 +49,7 @@ class DiagnosisResource(
         // Validate ID - reject negative or zero values
         if (id <= 0) {
             return Response.status(Response.Status.BAD_REQUEST)
+                .type(MediaType.APPLICATION_JSON)
                 .entity(mapOf("error" to "Diagnosis ID must be a positive number"))
                 .build()
         }
