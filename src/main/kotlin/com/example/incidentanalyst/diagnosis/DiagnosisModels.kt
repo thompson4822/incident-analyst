@@ -31,6 +31,8 @@ sealed interface DiagnosisError {
     data object RetrievalFailed : DiagnosisError
     data object LlmUnavailable : DiagnosisError
     data class LlmResponseInvalid(val reason: String) : DiagnosisError
+    data object NotFound : DiagnosisError
+    data object UpdateFailed : DiagnosisError
 }
 
 sealed interface DiagnosisResult {
