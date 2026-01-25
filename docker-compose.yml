@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: ankane/pgvector:pg16
+    container_name: incident-analyst-postgres
+    environment:
+      POSTGRES_DB: incident_analyst
+      POSTGRES_USER: incident
+      POSTGRES_PASSWORD: incident
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

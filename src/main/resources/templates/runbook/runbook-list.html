@@ -1,0 +1,26 @@
+{#include layout/base}
+{#insert body}
+  <section class="space-y-6">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <h2 class="text-3xl font-semibold text-slate-900">Runbook Library</h2>
+        <p class="text-sm text-slate-500">Reusable playbooks for response and recovery.</p>
+      </div>
+      <button class="btn btn-accent">New runbook</button>
+    </div>
+
+    <div class="grid gap-4 md:grid-cols-2">
+      {#for fragment in runbooks}
+        <article class="rounded-2xl border border-amber-100 bg-white/90 p-5 shadow-sm">
+          <h3 class="text-xl font-semibold text-slate-900">{fragment.title}</h3>
+          <p class="mt-2 text-sm text-slate-600">{fragment.content}</p>
+          <div class="mt-4 flex items-center justify-between">
+            <span class="text-xs uppercase tracking-[0.2em] text-slate-400">{fragment.tags}</span>
+            <a class="btn btn-sm" href="/runbooks/{fragment.id}">Edit</a>
+          </div>
+        </article>
+      {/for}
+    </div>
+  </section>
+{/insert}
+{/include}

@@ -1,0 +1,32 @@
+{#include layout/base}
+{#insert body}
+  <section class="space-y-6">
+    <div>
+      <h2 class="text-3xl font-semibold text-slate-900">Edit Runbook</h2>
+      <p class="text-sm text-slate-500">Keep operational guidance up to date.</p>
+    </div>
+
+    <form class="space-y-4 rounded-2xl border border-amber-100 bg-white/90 p-6 shadow-sm">
+      <label class="form-control">
+        <span class="label-text text-sm text-slate-500">Title</span>
+        <input class="input input-bordered" name="title" value="{runbook.title}" />
+      </label>
+
+      <label class="form-control">
+        <span class="label-text text-sm text-slate-500">Content</span>
+        <textarea class="textarea textarea-bordered min-h-[160px]" name="content">{runbook.content}</textarea>
+      </label>
+
+      <label class="form-control">
+        <span class="label-text text-sm text-slate-500">Tags</span>
+        <input class="input input-bordered" name="tags" value="{runbook.tags}" />
+      </label>
+
+      <div class="flex items-center justify-end gap-3">
+        <button class="btn btn-outline" type="button">Cancel</button>
+        <button class="btn btn-accent" type="submit">Save changes</button>
+      </div>
+    </form>
+  </section>
+{/insert}
+{/include}

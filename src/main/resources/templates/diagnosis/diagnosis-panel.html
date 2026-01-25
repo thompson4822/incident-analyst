@@ -1,0 +1,24 @@
+<section class="rounded-2xl border border-emerald-100 bg-white/90 p-6 shadow-sm">
+  <div class="flex flex-wrap items-center justify-between gap-4">
+    <div>
+      <h3 class="text-xl font-semibold text-slate-900">Suggested Diagnosis</h3>
+      <p class="text-sm text-slate-500">AI-assisted context paired with historical signals.</p>
+    </div>
+    <button class="btn btn-outline">Verify diagnosis</button>
+  </div>
+
+  <div class="mt-5 space-y-4">
+    <div>
+      <p class="text-xs uppercase tracking-[0.2em] text-slate-400">Root cause</p>
+      <p class="mt-2 text-base text-slate-700">{diagnosis.rootCause}</p>
+    </div>
+    <div>
+      <p class="text-xs uppercase tracking-[0.2em] text-slate-400">Recommended steps</p>
+      <ul class="mt-2 list-disc space-y-2 pl-5 text-sm text-slate-600">
+        {#for step in diagnosis.steps}
+          <li>{step}</li>
+        {/for}
+      </ul>
+    </div>
+  </div>
+</section>

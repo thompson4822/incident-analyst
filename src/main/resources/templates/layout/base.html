@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Incident Analyst</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Literata:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <style>
+      :root {
+        --ink: #1f2933;
+        --muted: #6b7280;
+        --surface: #f7f3ee;
+        --accent: #0f766e;
+        --accent-soft: #ccfbf1;
+        --sunset: #f97316;
+      }
+      body {
+        font-family: "Literata", serif;
+        color: var(--ink);
+        background: radial-gradient(circle at 10% 20%, #fff7ed 0%, #f7f3ee 45%, #ecfeff 100%);
+        min-height: 100vh;
+      }
+      h1, h2, h3, h4 {
+        font-family: "Space Grotesk", sans-serif;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="min-h-screen">
+      {#include layout/navbar /}
+      <main class="mx-auto max-w-6xl px-6 pb-16 pt-10">
+        {#insert body}{/insert}
+      </main>
+    </div>
+  </body>
+</html>

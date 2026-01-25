@@ -1,0 +1,30 @@
+{#include layout/base}
+{#insert body}
+  <section class="space-y-6">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <h2 class="text-3xl font-semibold text-slate-900">Recent Incidents</h2>
+        <p class="text-sm text-slate-500">Track alerts coming in from monitoring sources.</p>
+      </div>
+      <button class="btn btn-accent">Create Incident</button>
+    </div>
+
+    <div class="grid gap-4 md:grid-cols-2">
+      {#for incident in incidents}
+        <article class="rounded-2xl border border-amber-100 bg-white/90 p-5 shadow-sm">
+          <div class="flex items-center justify-between">
+            <p class="text-xs uppercase tracking-[0.2em] text-slate-500">{incident.source}</p>
+            <span class="badge badge-outline">{incident.severity}</span>
+          </div>
+          <h3 class="mt-3 text-xl font-semibold text-slate-900">{incident.title}</h3>
+          <p class="mt-2 text-sm text-slate-600">{incident.description}</p>
+          <div class="mt-4 flex items-center justify-between">
+            <span class="text-xs uppercase tracking-[0.2em] text-emerald-600">{incident.status}</span>
+            <a class="btn btn-sm" href="/incidents/{incident.id}">View detail</a>
+          </div>
+        </article>
+      {/for}
+    </div>
+  </section>
+{/insert}
+{/include}
