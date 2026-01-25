@@ -36,14 +36,26 @@ class CloudWatchIngestionService(
 
     fun ingestAlarms(): CloudWatchIngestionResult {
         val pollTimestamp = Instant.now()
-
-        val queryResult = cloudWatchAlarmClient.listAlarmsInAlarmState()
-
+        
+        val queryResult = try {
+            cloudWatchAlarmClient.listAlarmsInAlarmState()
+        } catch (e: Exception) {
+            log.errorf(
+                e,
+                "Failed to call CloudWatch client. errorType=Unknown, operation=ListAlarms, pollTimestamp=%s, error=%s",
+                pollTimestamp,
+                e.message ?: "Unexpected exception"
+            )
+            return CloudWatchIngestionResult.Failure(
+                IngestionError.AwsError(AwsError.Unknown(e.message ?: "Unexpected exception"))
+            )
+        }
+        
         return when (queryResult) {
             is AlarmQueryResult.Success -> {
                 val alarms = queryResult.alarms
                 val incidents = alarms.mapNotNull { mapAlarmToIncident(it) }
-
+                
                 log.infof(
                     "Successfully polled %d CloudWatch alarms in ALARM state, mapped to %d incidents",
                     alarms.size,
@@ -81,14 +93,14 @@ class CloudWatchIngestionService(
                     is AwsError.ServiceUnavailable -> "ServiceUnavailable"
                     is AwsError.Unknown -> "Unknown"
                 }
-
+                
                 log.errorf(
-                    "Failed to poll CloudWatch alarms. errorType=%s, operation=ListAlarms, pollTimestamp=%s, error=%s",
+                    "Failed to poll CloudWatch alarms. errorType=%s, operation=ListAlarms, alarmCount=0, incidentCount=0, pollTimestamp=%s, error=%s",
                     errorType,
                     pollTimestamp,
                     queryResult.error
                 )
-
+                
                 CloudWatchIngestionResult.Failure(
                     IngestionError.AwsError(queryResult.error)
                 )
