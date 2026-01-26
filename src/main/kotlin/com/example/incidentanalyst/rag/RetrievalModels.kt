@@ -1,9 +1,4 @@
 package com.example.incidentanalyst.rag
 
-import com.example.incidentanalyst.incident.Incident
-import com.example.incidentanalyst.runbook.RunbookFragment
-
-data class RetrievalContext(
-    val similarIncidents: List<Incident>,
-    val runbookFragments: List<RunbookFragment>
-)
+// Intentionally left empty.
+// RetrievalContext is defined in RetrievalContext.kt to avoid duplicate declarations.
