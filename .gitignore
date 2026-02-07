@@ -11,3 +11,4 @@ target/
 *.log
 local.env
 .env
+logs/

@@ -126,6 +126,17 @@
             <artifactId>cloudwatchlogs</artifactId>
         </dependency>
 
+        <!-- Quarkus Amazon CloudWatch with explicit version for Dev Services -->
+        <dependency>
+            <groupId>io.quarkiverse.amazonservices</groupId>
+            <artifactId>quarkus-amazon-cloudwatch</artifactId>
+            <version>2.16.0</version>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>url-connection-client</artifactId>
+        </dependency>
+
         <!-- Testing -->
         <dependency>
             <groupId>io.quarkus</groupId>
