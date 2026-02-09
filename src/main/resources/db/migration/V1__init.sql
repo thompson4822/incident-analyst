@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS runbook_fragments (
     id BIGSERIAL PRIMARY KEY,
     title TEXT NOT NULL,
     content TEXT NOT NULL,
-    tags JSONB,
+    tags TEXT,
     created_at TIMESTAMPTZ NOT NULL
 );
 

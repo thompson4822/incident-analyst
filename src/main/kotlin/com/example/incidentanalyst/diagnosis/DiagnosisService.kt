@@ -11,6 +11,9 @@ class DiagnosisService(
     fun listRecent(limit: Int = 50): List<Diagnosis> =
         diagnosisRepository.findRecent(limit).map { it.toDomain() }
 
+    fun getByIncidentId(incidentId: Long): Diagnosis? =
+        diagnosisRepository.findByIncidentId(incidentId)?.toDomain()
+
     fun getById(id: DiagnosisId): DiagnosisResult =
         diagnosisRepository.findById(id.value)?.toDomain()?.let { diagnosis ->
             DiagnosisResult.Success(diagnosis)

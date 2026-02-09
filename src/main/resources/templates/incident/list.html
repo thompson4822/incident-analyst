@@ -1,30 +1,173 @@
 {#include layout/base}
-{#insert body}
-  <section class="space-y-6">
-    <div class="flex flex-wrap items-end justify-between gap-4">
+{#body}
+  <div class="space-y-6">
+    <!-- Header & Stats -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
       <div>
-        <h2 class="text-3xl font-semibold text-slate-900">Recent Incidents</h2>
-        <p class="text-sm text-slate-500">Track alerts coming in from monitoring sources.</p>
+        <h1 class="text-3xl font-bold text-slate-900">Incidents</h1>
+        <p class="text-sm text-slate-500 mt-1">Manage and track all operational alerts across your infrastructure.</p>
       </div>
-      <button class="btn btn-accent">Create Incident</button>
+      <div class="flex items-center gap-4">
+        <div class="stats shadow-sm border border-slate-200 bg-white/90">
+          <div class="stat py-2 px-4">
+            <div class="stat-title text-[10px] uppercase tracking-wider">Active</div>
+            <div class="stat-value text-xl text-orange-600">{model.activeCount}</div>
+          </div>
+          <div class="stat py-2 px-4">
+            <div class="stat-title text-[10px] uppercase tracking-wider">Total</div>
+            <div class="stat-value text-xl text-slate-900">{model.totalCount}</div>
+          </div>
+        </div>
+        <button class="btn btn-primary bg-teal-600 hover:bg-teal-700 border-none text-white">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+          Create Incident
+        </button>
+      </div>
     </div>
 
-    <div class="grid gap-4 md:grid-cols-2">
-      {#for incident in incidents}
-        <article class="rounded-2xl border border-amber-100 bg-white/90 p-5 shadow-sm">
-          <div class="flex items-center justify-between">
-            <p class="text-xs uppercase tracking-[0.2em] text-slate-500">{incident.source}</p>
-            <span class="badge badge-outline">{incident.severity}</span>
+    <!-- Filter Bar -->
+    <div class="card bg-white/90 border border-slate-200 shadow-sm">
+      <div class="card-body p-4">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="join border border-slate-200">
+              <button class="btn btn-sm join-item bg-white border-none text-slate-700 hover:bg-slate-50">All</button>
+              <button class="btn btn-sm join-item bg-white border-none text-slate-700 hover:bg-slate-50">Open</button>
+              <button class="btn btn-sm join-item bg-white border-none text-slate-700 hover:bg-slate-50">Acknowledged</button>
+              <button class="btn btn-sm join-item bg-white border-none text-slate-700 hover:bg-slate-50">Resolved</button>
+            </div>
+            
+            <div class="divider divider-horizontal mx-0"></div>
+            
+            <select class="select select-sm select-bordered border-slate-200 bg-white text-slate-700">
+              <option disabled selected>Severity</option>
+              <option>Critical</option>
+              <option>High</option>
+              <option>Medium</option>
+              <option>Low</option>
+            </select>
+
+            <select class="select select-sm select-bordered border-slate-200 bg-white text-slate-700">
+              <option disabled selected>Source</option>
+              <option>CloudWatch</option>
+              <option>Manual</option>
+            </select>
           </div>
-          <h3 class="mt-3 text-xl font-semibold text-slate-900">{incident.title}</h3>
-          <p class="mt-2 text-sm text-slate-600">{incident.description}</p>
-          <div class="mt-4 flex items-center justify-between">
-            <span class="text-xs uppercase tracking-[0.2em] text-emerald-600">{incident.status}</span>
-            <a class="btn btn-sm" href="/incidents/{incident.id}">View detail</a>
+
+          <div class="flex items-center gap-2">
+            <div class="relative">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+              </svg>
+              <input type="text" placeholder="Search incidents..." class="input input-sm input-bordered border-slate-200 bg-white pl-9 w-64 focus:border-teal-500" />
+            </div>
+            <button class="btn btn-sm btn-ghost btn-square text-slate-500">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+              </svg>
+            </button>
           </div>
-        </article>
-      {/for}
+        </div>
+      </div>
     </div>
-  </section>
-{/insert}
+
+    <!-- Incident Table -->
+    <div class="card bg-white/90 border border-slate-200 shadow-sm overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="table table-compact table-zebra w-full">
+          <thead class="bg-slate-50 border-b border-slate-200">
+            <tr>
+              <th class="w-12"><input type="checkbox" class="checkbox checkbox-xs border-slate-300" /></th>
+              <th class="text-xs font-semibold text-slate-600 uppercase tracking-wider">Severity</th>
+              <th class="text-xs font-semibold text-slate-600 uppercase tracking-wider">Incident</th>
+              <th class="text-xs font-semibold text-slate-600 uppercase tracking-wider">Status</th>
+              <th class="text-xs font-semibold text-slate-600 uppercase tracking-wider">Source</th>
+              <th class="text-xs font-semibold text-slate-600 uppercase tracking-wider">Created</th>
+              <th class="w-10"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {#for incident in model.incidents}
+              <tr class="hover:bg-slate-50/80 transition-colors group cursor-pointer" onclick="window.location='/incidents/{incident.id}'">
+                <td><input type="checkbox" class="checkbox checkbox-xs border-slate-300" onclick="event.stopPropagation()" /></td>
+                <td>
+                  <div class="flex items-center gap-2">
+                    <div class="h-2 w-2 rounded-full bg-{incident.severityColor}"></div>
+                    <span class="text-xs font-medium text-slate-700">{incident.severity}</span>
+                  </div>
+                </td>
+                <td class="py-3">
+                  <div class="space-y-1">
+                    <div class="flex items-center gap-2">
+                      <span class="text-sm font-bold text-slate-900 group-hover:text-teal-600 transition-colors">{incident.title}</span>
+                      <span class="text-[10px] font-mono text-slate-400">INC-{incident.id}</span>
+                    </div>
+                    <p class="text-xs text-slate-500 line-clamp-1">{incident.shortDescription}</p>
+                    <div class="flex flex-wrap gap-1 mt-1">
+                      {#for tag in incident.tags}
+                        <span class="badge badge-ghost badge-xs text-[9px]">{tag}</span>
+                      {/for}
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <span class="badge badge-{incident.statusColor} badge-sm font-medium">{incident.status}</span>
+                </td>
+                <td>
+                  <span class="text-xs font-medium text-slate-600 uppercase tracking-wider">{incident.source}</span>
+                </td>
+                <td>
+                  <div class="text-xs text-slate-600">{incident.createdAt}</div>
+                  <div class="text-[10px] text-slate-400 mt-0.5">Updated {incident.updatedAt}</div>
+                </td>
+                <td>
+                  <div class="dropdown dropdown-end">
+                    <button class="btn btn-ghost btn-xs btn-square opacity-0 group-hover:opacity-100 transition-opacity" onclick="event.stopPropagation()">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 12.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 18.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Z" />
+                      </svg>
+                    </button>
+                    <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-40 border border-slate-200">
+                      <li><a>Acknowledge</a></li>
+                      <li><a>Resolve</a></li>
+                      <li><a>Assign to me</a></li>
+                    </ul>
+                  </div>
+                </td>
+              </tr>
+            {/for}
+            {#if model.incidents.isEmpty}
+              <tr>
+                <td colspan="7" class="py-20 text-center">
+                  <div class="flex flex-col items-center gap-3">
+                    <div class="p-4 bg-slate-50 rounded-full text-slate-300">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-12 h-12">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.745 3.745 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z" />
+                      </svg>
+                    </div>
+                    <p class="text-slate-500 font-medium">No incidents found</p>
+                    <p class="text-xs text-slate-400">All systems are operating normally.</p>
+                  </div>
+                </td>
+              </tr>
+            {/if}
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- Pagination -->
+      <div class="bg-slate-50 px-4 py-3 border-t border-slate-200 flex items-center justify-between">
+        <div class="text-xs text-slate-500">
+          Showing <span class="font-medium">{model.incidents.size}</span> of <span class="font-medium">{model.totalCount}</span> incidents
+        </div>
+        <div class="join">
+          <button class="btn btn-xs join-item bg-white border-slate-200 text-slate-600 hover:bg-slate-50 disabled:bg-slate-50" disabled>Previous</button>
+          <button class="btn btn-xs join-item bg-white border-slate-200 text-slate-600 hover:bg-slate-50">Next</button>
+        </div>
+      </div>
+    </div>
+  </div>
+{/body}
 {/include}

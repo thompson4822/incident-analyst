@@ -1,32 +1,168 @@
 {#include layout/base}
-{#insert body}
-  <section class="space-y-6">
-    <div>
-      <h2 class="text-3xl font-semibold text-slate-900">Edit Runbook</h2>
-      <p class="text-sm text-slate-500">Keep operational guidance up to date.</p>
+{#body}
+  <div class="flex flex-col space-y-6">
+    <!-- Breadcrumbs & Header -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div class="space-y-1">
+        <div class="text-sm breadcrumbs text-slate-500">
+          <ul>
+            <li><a href="/">Dashboard</a></li>
+            <li><a href="/runbooks">Runbooks</a></li>
+            <li>{runbook.title}</li>
+          </ul>
+        </div>
+        <h1 class="text-2xl font-bold text-slate-900">{runbook.title}</h1>
+      </div>
+      <div class="flex items-center gap-2">
+        <button class="btn btn-sm btn-outline border-slate-200 text-slate-700">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75" />
+          </svg>
+          Duplicate
+        </button>
+        <button class="btn btn-sm btn-primary bg-teal-600 hover:bg-teal-700 border-none text-white px-6">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347c-.75.412-1.667-.13-1.667-.986V5.653Z" />
+          </svg>
+          Execute
+        </button>
+      </div>
     </div>
 
-    <form class="space-y-4 rounded-2xl border border-amber-100 bg-white/90 p-6 shadow-sm">
-      <label class="form-control">
-        <span class="label-text text-sm text-slate-500">Title</span>
-        <input class="input input-bordered" name="title" value="{runbook.title}" />
-      </label>
+    <!-- Main Content Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      
+      <!-- Left Sidebar: Properties (1/4) -->
+      <div class="lg:col-span-1 space-y-6">
+        <div class="card bg-white/90 border border-slate-200 shadow-sm">
+          <div class="card-body p-5 space-y-4">
+            <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-500">Properties</h3>
+            
+            <div class="space-y-1">
+              <label class="text-xs font-medium text-slate-400">Category</label>
+              <div class="text-sm font-semibold text-slate-900">{runbook.category}</div>
+            </div>
 
-      <label class="form-control">
-        <span class="label-text text-sm text-slate-500">Content</span>
-        <textarea class="textarea textarea-bordered min-h-[160px]" name="content">{runbook.content}</textarea>
-      </label>
+            <div class="space-y-1">
+              <label class="text-xs font-medium text-slate-400">Severity</label>
+              <div>
+                <span class="badge badge-{runbook.severityColor} badge-outline badge-sm">{runbook.severity}</span>
+              </div>
+            </div>
 
-      <label class="form-control">
-        <span class="label-text text-sm text-slate-500">Tags</span>
-        <input class="input input-bordered" name="tags" value="{runbook.tags}" />
-      </label>
+            <div class="space-y-1">
+              <label class="text-xs font-medium text-slate-400">Version</label>
+              <div class="text-sm font-mono text-slate-900">v{runbook.version}</div>
+            </div>
 
-      <div class="flex items-center justify-end gap-3">
-        <button class="btn btn-outline" type="button">Cancel</button>
-        <button class="btn btn-accent" type="submit">Save changes</button>
+            <div class="space-y-1">
+              <label class="text-xs font-medium text-slate-400">Tags</label>
+              <div class="flex flex-wrap gap-1">
+                {#for tag in runbook.tags}
+                  <span class="badge badge-ghost badge-xs">{tag}</span>
+                {/for}
+              </div>
+            </div>
+
+            <div class="divider my-2"></div>
+
+            <div class="space-y-1">
+              <label class="text-xs font-medium text-slate-400">Last Updated</label>
+              <div class="text-sm text-slate-900">{runbook.createdAt}</div>
+            </div>
+
+            <div class="mt-4">
+              <button class="btn btn-sm btn-block btn-outline border-slate-200 text-slate-700 hover:bg-slate-50">Edit Properties</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Automation Card -->
+        <div class="card bg-teal-50/50 border border-teal-100 shadow-sm">
+          <div class="card-body p-5">
+            <h3 class="text-sm font-semibold uppercase tracking-wider text-teal-700 flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z" />
+              </svg>
+              AI Integration
+            </h3>
+            <p class="text-xs text-teal-600 mt-2">This runbook is automatically suggested for incidents with <strong>latency</strong> symptoms.</p>
+            <div class="mt-4">
+              <div class="form-control">
+                <label class="label cursor-pointer justify-start gap-3">
+                  <input type="checkbox" checked="checked" class="checkbox checkbox-xs checkbox-primary" />
+                  <span class="label-text text-xs">Auto-suggest</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-    </form>
-  </section>
-{/insert}
+      
+      <!-- Main Area: Content (3/4) -->
+      <div class="lg:col-span-3 space-y-6">
+        
+        <!-- Tabs -->
+        <div role="tablist" class="tabs tabs-lifted">
+          <input type="radio" name="runbook_tabs" role="tab" class="tab" aria-label="Procedure" checked="checked" />
+          <div role="tabpanel" class="tab-content bg-white border-slate-200 rounded-box p-6 shadow-sm">
+            <div class="space-y-8">
+              {#for step in runbook.steps}
+                <div class="flex items-start gap-4 group">
+                  <div class="flex-none flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 font-bold text-sm border border-slate-200 group-hover:bg-teal-50 group-hover:text-teal-600 group-hover:border-teal-200 transition-colors">
+                    {step.order}
+                  </div>
+                  <div class="flex-1 space-y-2">
+                    <h4 class="text-lg font-semibold text-slate-900">{step.title}</h4>
+                    <div class="prose prose-sm max-w-none text-slate-600">
+                      <p>{step.description}</p>
+                    </div>
+                  </div>
+                </div>
+                {#if !step_isLast}
+                  <div class="ml-4 pl-4 border-l-2 border-slate-100 h-4"></div>
+                {/if}
+              {/for}
+            </div>
+          </div>
+
+          <input type="radio" name="runbook_tabs" role="tab" class="tab" aria-label="Raw Content" />
+          <div role="tabpanel" class="tab-content bg-white border-slate-200 rounded-box p-6 shadow-sm">
+            <div class="form-control">
+              <textarea class="textarea textarea-bordered h-96 font-mono text-sm bg-slate-50" readonly>{runbook.content}</textarea>
+            </div>
+            <div class="card-actions justify-end mt-4">
+              <button class="btn btn-sm btn-outline border-slate-200 text-slate-700">Copy to Clipboard</button>
+              <button class="btn btn-sm btn-primary bg-teal-600 hover:bg-teal-700 border-none text-white">Edit Markdown</button>
+            </div>
+          </div>
+
+          <input type="radio" name="runbook_tabs" role="tab" class="tab" aria-label="History" />
+          <div role="tabpanel" class="tab-content bg-white border-slate-200 rounded-box p-6 shadow-sm">
+            <div class="overflow-x-auto">
+              <table class="table table-compact w-full">
+                <thead>
+                  <tr>
+                    <th>Version</th>
+                    <th>Date</th>
+                    <th>Author</th>
+                    <th>Changes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="badge badge-ghost font-mono">v1.0</span></td>
+                    <td>{runbook.createdAt}</td>
+                    <td>System</td>
+                    <td>Initial creation</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{/body}
 {/include}

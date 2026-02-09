@@ -11,6 +11,17 @@ class RunbookService(
     fun listRecent(limit: Int = 50): List<RunbookFragment> =
         runbookFragmentRepository.findRecent(limit).map { it.toDomain() }
 
+    @Transactional
+    fun createFragment(title: String, content: String, tags: String?): RunbookFragment {
+        val entity = RunbookFragmentEntity(
+            title = title,
+            content = content,
+            tags = tags
+        )
+        runbookFragmentRepository.persistAndFlush(entity)
+        return entity.toDomain()
+    }
+
     fun getById(id: RunbookFragmentId): RunbookFragmentResult =
         runbookFragmentRepository.findById(id.value)?.toDomain()?.let { fragment ->
             RunbookFragmentResult.Success(fragment)
