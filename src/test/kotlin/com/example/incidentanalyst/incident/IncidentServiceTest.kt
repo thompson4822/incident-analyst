@@ -1,5 +1,6 @@
 package com.example.incidentanalyst.incident
 
+import com.example.incidentanalyst.common.Either
 import io.quarkus.test.InjectMock
 import io.quarkus.test.junit.QuarkusTest
 import jakarta.inject.Inject
@@ -36,8 +37,8 @@ class IncidentServiceTest {
         val result = incidentService.getById(IncidentId(testId))
 
         // Assert
-        assertTrue(result is IncidentResult.Failure)
-        val error = (result as IncidentResult.Failure).error
+        assertTrue(result is Either.Left)
+        val error = (result as Either.Left).value
         assertTrue(error is IncidentError.NotFound)
     }
 
@@ -63,8 +64,8 @@ class IncidentServiceTest {
         val result = incidentService.getById(IncidentId(testId))
 
         // Assert
-        assertTrue(result is IncidentResult.Success)
-        val incident = (result as IncidentResult.Success).incident
+        assertTrue(result is Either.Right)
+        val incident = (result as Either.Right).value
         assertTrue(incident.status is IncidentStatus.Diagnosed)
         val diagnosedStatus = incident.status as IncidentStatus.Diagnosed
         assertEquals(diagnosisId, diagnosedStatus.diagnosisId)
@@ -91,8 +92,8 @@ class IncidentServiceTest {
         val result = incidentService.getById(IncidentId(testId))
 
         // Assert
-        assertTrue(result is IncidentResult.Success)
-        val incident = (result as IncidentResult.Success).incident
+        assertTrue(result is Either.Right)
+        val incident = (result as Either.Right).value
         assertTrue(incident.status is IncidentStatus.Acknowledged)
     }
 
@@ -117,13 +118,13 @@ class IncidentServiceTest {
         val result = incidentService.getById(IncidentId(testId))
 
         // Assert
-        assertTrue(result is IncidentResult.Success)
-        val incident = (result as IncidentResult.Success).incident
+        assertTrue(result is Either.Right)
+        val incident = (result as Either.Right).value
         assertTrue(incident.status is IncidentStatus.Resolved)
     }
 
     @Test
-    fun `IncidentResult Success pattern matching works correctly`() {
+    fun `Either Success pattern matching works correctly`() {
         // Arrange
         val testId = 111L
         val testTimestamp = Instant.now()
@@ -144,20 +145,20 @@ class IncidentServiceTest {
 
         // Assert
         when (result) {
-            is IncidentResult.Success -> {
-                val incident = result.incident
+            is Either.Right -> {
+                val incident = result.value
                 assertEquals("Test incident", incident.title)
                 assertNotNull(incident.id)
             }
-            is IncidentResult.Failure -> {
+            is Either.Left -> {
                 // Should not reach here
-                org.junit.jupiter.api.Assertions.fail<Any>("Expected Success but got Failure")
+                org.junit.jupiter.api.Assertions.fail<Any>("Expected Right but got Left")
             }
         }
     }
 
     @Test
-    fun `IncidentResult Failure pattern matching works correctly`() {
+    fun `Either Left pattern matching works correctly`() {
         // Arrange
         val testId = 222L
         `when`(incidentRepository.findById(testId)).thenReturn(null)
@@ -167,12 +168,12 @@ class IncidentServiceTest {
 
         // Assert
         when (result) {
-            is IncidentResult.Success -> {
+            is Either.Right -> {
                 // Should not reach here
-                org.junit.jupiter.api.Assertions.fail<Any>("Expected Failure but got Success")
+                org.junit.jupiter.api.Assertions.fail<Any>("Expected Left but got Right")
             }
-            is IncidentResult.Failure -> {
-                assertTrue(result.error is IncidentError.NotFound)
+            is Either.Left -> {
+                assertTrue(result.value is IncidentError.NotFound)
             }
         }
     }

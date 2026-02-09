@@ -1,5 +1,6 @@
 package com.example.incidentanalyst.runbook
 
+import com.example.incidentanalyst.common.Either
 import io.quarkus.test.InjectMock
 import io.quarkus.test.junit.QuarkusTest
 import io.restassured.RestAssured.given
@@ -43,10 +44,11 @@ class RunbookResourceTest {
             tags = "tag2",
             createdAt = baseTime.minusSeconds(3600)
         )
-        `when`(runbookService.listRecent()).thenReturn(listOf(fragment1, fragment2))
+        `when`(runbookService.search(null, null)).thenReturn(listOf(fragment1, fragment2))
 
         // Act & Assert
         given()
+            .accept(ContentType.JSON)
             .contentType(ContentType.JSON)
             .`when`()
             .get("/runbooks")
@@ -62,10 +64,11 @@ class RunbookResourceTest {
     @Test
     fun `GET returns empty list when no fragments exist`() {
         // Arrange
-        `when`(runbookService.listRecent()).thenReturn(emptyList())
+        `when`(runbookService.search(null, null)).thenReturn(emptyList())
 
         // Act & Assert
         given()
+            .accept(ContentType.JSON)
             .contentType(ContentType.JSON)
             .`when`()
             .get("/runbooks")
@@ -87,10 +90,11 @@ class RunbookResourceTest {
             createdAt = testTimestamp
         )
         `when`(runbookService.getById(RunbookFragmentId(testId)))
-            .thenReturn(RunbookFragmentResult.Success(fragment))
+            .thenReturn(Either.Right(fragment))
 
         // Act & Assert
         given()
+            .accept(ContentType.JSON)
             .contentType(ContentType.JSON)
             .`when`()
             .get("/runbooks/$testId")
@@ -107,10 +111,11 @@ class RunbookResourceTest {
         // Arrange
         val testId = 999L
         `when`(runbookService.getById(RunbookFragmentId(testId)))
-            .thenReturn(RunbookFragmentResult.Failure(RunbookFragmentError.NotFound))
+            .thenReturn(Either.Left(RunbookFragmentError.NotFound))
 
         // Act & Assert
         given()
+            .accept(ContentType.JSON)
             .contentType(ContentType.JSON)
             .`when`()
             .get("/runbooks/$testId")
@@ -131,10 +136,11 @@ class RunbookResourceTest {
             createdAt = testTimestamp
         )
         `when`(runbookService.getById(RunbookFragmentId(testId)))
-            .thenReturn(RunbookFragmentResult.Success(fragment))
+            .thenReturn(Either.Right(fragment))
 
         // Act & Assert
         given()
+            .accept(ContentType.JSON)
             .contentType(ContentType.JSON)
             .`when`()
             .get("/runbooks/$testId")
@@ -161,7 +167,7 @@ class RunbookResourceTest {
             "Updated Title",
             "Updated Content",
             "updated,tag"
-        )).thenReturn(RunbookFragmentResult.Success(fragment))
+        )).thenReturn(Either.Right(fragment))
 
         // Act & Assert
         given()
@@ -186,7 +192,7 @@ class RunbookResourceTest {
             "Title",
             "Content",
             null
-        )).thenReturn(RunbookFragmentResult.Failure(RunbookFragmentError.NotFound))
+        )).thenReturn(Either.Left(RunbookFragmentError.NotFound))
 
         // Act & Assert
         given()
@@ -207,7 +213,7 @@ class RunbookResourceTest {
             "   ",
             "Content",
             null
-        )).thenReturn(RunbookFragmentResult.Failure(RunbookFragmentError.ValidationFailed))
+        )).thenReturn(Either.Left(RunbookFragmentError.ValidationFailed))
 
         // Act & Assert
         given()
@@ -229,7 +235,7 @@ class RunbookResourceTest {
             "Title",
             "",
             null
-        )).thenReturn(RunbookFragmentResult.Failure(RunbookFragmentError.ValidationFailed))
+        )).thenReturn(Either.Left(RunbookFragmentError.ValidationFailed))
 
         // Act & Assert
         given()
@@ -251,7 +257,7 @@ class RunbookResourceTest {
             "",
             "   ",
             null
-        )).thenReturn(RunbookFragmentResult.Failure(RunbookFragmentError.ValidationFailed))
+        )).thenReturn(Either.Left(RunbookFragmentError.ValidationFailed))
 
         // Act & Assert
         given()
@@ -281,7 +287,7 @@ class RunbookResourceTest {
             "New Title",
             "Original Content",
             null
-        )).thenReturn(RunbookFragmentResult.Success(fragment))
+        )).thenReturn(Either.Right(fragment))
 
         // Act & Assert
         given()
@@ -311,7 +317,7 @@ class RunbookResourceTest {
             "Original Title",
             "New Content",
             null
-        )).thenReturn(RunbookFragmentResult.Success(fragment))
+        )).thenReturn(Either.Right(fragment))
 
         // Act & Assert
         given()
@@ -341,7 +347,7 @@ class RunbookResourceTest {
             "Title",
             "Content",
             "new,tags"
-        )).thenReturn(RunbookFragmentResult.Success(fragment))
+        )).thenReturn(Either.Right(fragment))
 
         // Act & Assert
         given()
@@ -371,7 +377,7 @@ class RunbookResourceTest {
             "Title",
             "Content",
             null
-        )).thenReturn(RunbookFragmentResult.Success(fragment))
+        )).thenReturn(Either.Right(fragment))
 
         // Act & Assert
         given()
@@ -395,10 +401,11 @@ class RunbookResourceTest {
             tags = "tag1,tag2",
             createdAt = baseTime
         )
-        `when`(runbookService.listRecent()).thenReturn(listOf(fragment))
+        `when`(runbookService.search(null, null)).thenReturn(listOf(fragment))
 
         // Act & Assert
         given()
+            .accept(ContentType.JSON)
             .contentType(ContentType.JSON)
             .`when`()
             .get("/runbooks")
@@ -423,10 +430,11 @@ class RunbookResourceTest {
             createdAt = testTimestamp
         )
         `when`(runbookService.getById(RunbookFragmentId(testId)))
-            .thenReturn(RunbookFragmentResult.Success(fragment))
+            .thenReturn(Either.Right(fragment))
 
         // Act & Assert
         given()
+            .accept(ContentType.JSON)
             .contentType(ContentType.JSON)
             .`when`()
             .get("/runbooks/$testId")

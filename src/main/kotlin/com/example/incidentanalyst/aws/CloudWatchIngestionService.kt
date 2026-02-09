@@ -1,5 +1,6 @@
 package com.example.incidentanalyst.aws
 
+import com.example.incidentanalyst.common.Either
 import com.example.incidentanalyst.incident.Incident
 import com.example.incidentanalyst.incident.IncidentService
 import com.example.incidentanalyst.incident.IncidentStatus
@@ -19,41 +20,50 @@ class CloudWatchIngestionService(
 
     @Scheduled(every = "60s")
     fun pollIncidents() {
-        val result = ingestAlarms()
-
-        when (result) {
-            is CloudWatchIngestionResult.Success -> {
-                log.infof(
-                    "CloudWatch ingestion completed successfully. Incidents created: %d",
-                    result.count
-                )
+        ingestAlarms().fold(
+            ifLeft = { /* Result already logged, no action needed */ },
+            ifRight = { success ->
+                when (success) {
+                    is IngestionSuccess.NewIncidentsCreated -> {
+                        log.infof(
+                            "CloudWatch ingestion completed successfully. Incidents created: %d",
+                            success.count
+                        )
+                    }
+                    is IngestionSuccess.NoNewAlarms -> {
+                        log.info("CloudWatch ingestion completed. No new alarms found.")
+                    }
+                }
             }
-            is CloudWatchIngestionResult.Failure -> {
-                // Result already logged, no action needed
-            }
-        }
+        )
     }
 
-    fun ingestAlarms(): CloudWatchIngestionResult {
+    fun ingestAlarms(): Either<IngestionError, IngestionSuccess> {
         val pollTimestamp = Instant.now()
         
-        val queryResult = try {
-            cloudWatchAlarmClient.listAlarmsInAlarmState()
-        } catch (e: Exception) {
-            log.errorf(
-                e,
-                "Failed to call CloudWatch client. errorType=Unknown, operation=ListAlarms, pollTimestamp=%s, error=%s",
-                pollTimestamp,
-                e.message ?: "Unexpected exception"
-            )
-            return CloudWatchIngestionResult.Failure(
-                IngestionError.AwsError(AwsError.Unknown(e.message ?: "Unexpected exception"))
-            )
-        }
-        
-        return when (queryResult) {
-            is AlarmQueryResult.Success -> {
-                val alarms = queryResult.alarms
+        return cloudWatchAlarmClient.listAlarmsInAlarmState()
+            .mapLeft { error ->
+                val errorType = when (error) {
+                    is AwsError.Throttled -> "Throttled"
+                    is AwsError.Unauthorized -> "Unauthorized"
+                    is AwsError.NetworkError -> "NetworkError"
+                    is AwsError.ServiceUnavailable -> "ServiceUnavailable"
+                    is AwsError.Unknown -> "Unknown"
+                }
+                
+                log.errorf(
+                    "Failed to poll CloudWatch alarms. errorType=%s, operation=ListAlarms, alarmCount=0, incidentCount=0, pollTimestamp=%s, error=%s",
+                    errorType,
+                    pollTimestamp,
+                    error
+                )
+                IngestionError.AwsError(error) as IngestionError
+            }
+            .flatMap { alarms ->
+                if (alarms.isEmpty()) {
+                    return@flatMap Either.Right(IngestionSuccess.NoNewAlarms)
+                }
+
                 val incidents = alarms.mapNotNull { mapAlarmToIncident(it) }
                 
                 log.infof(
@@ -77,35 +87,18 @@ class CloudWatchIngestionService(
                             pollTimestamp,
                             incident.title
                         )
-                        return CloudWatchIngestionResult.Failure(
+                        return@flatMap Either.Left(
                             IngestionError.PersistenceError("Failed to persist incident: ${incident.title}")
                         )
                     }
                 }
 
-                CloudWatchIngestionResult.Success(persistedCount)
-            }
-            is AlarmQueryResult.Failure -> {
-                val errorType = when (queryResult.error) {
-                    is AwsError.Throttled -> "Throttled"
-                    is AwsError.Unauthorized -> "Unauthorized"
-                    is AwsError.NetworkError -> "NetworkError"
-                    is AwsError.ServiceUnavailable -> "ServiceUnavailable"
-                    is AwsError.Unknown -> "Unknown"
+                if (persistedCount > 0) {
+                    Either.Right(IngestionSuccess.NewIncidentsCreated(persistedCount))
+                } else {
+                    Either.Right(IngestionSuccess.NoNewAlarms)
                 }
-                
-                log.errorf(
-                    "Failed to poll CloudWatch alarms. errorType=%s, operation=ListAlarms, alarmCount=0, incidentCount=0, pollTimestamp=%s, error=%s",
-                    errorType,
-                    pollTimestamp,
-                    queryResult.error
-                )
-                
-                CloudWatchIngestionResult.Failure(
-                    IngestionError.AwsError(queryResult.error)
-                )
             }
-        }
     }
 
     fun mapAlarmToIncident(alarm: AlarmDto): Incident? {
@@ -142,13 +135,13 @@ class CloudWatchIngestionService(
         val timestamp = alarm.stateUpdatedTimestamp?.toString() ?: "UNKNOWN"
 
         return """Alarm Name: $name
-Alarm Description: $description
-State Reason: $reason
-Namespace: $namespace
-Metric Name: $metricName
-Threshold: $threshold
-Comparison Operator: $operator
-State Updated Timestamp: $timestamp""".trimIndent()
+ Alarm Description: $description
+ State Reason: $reason
+ Namespace: $namespace
+ Metric Name: $metricName
+ Threshold: $threshold
+ Comparison Operator: $operator
+ State Updated Timestamp: $timestamp""".trimIndent()
     }
 
     fun deriveSeverity(alarm: AlarmDto): Severity {
@@ -156,7 +149,7 @@ State Updated Timestamp: $timestamp""".trimIndent()
         val operator = alarm.comparisonOperator?.trim()
 
         val isGreaterThanOperator = operator.equals("GreaterThanThreshold", ignoreCase = true) ||
-                               operator.equals("GreaterThanOrEqualToThreshold", ignoreCase = true)
+                                operator.equals("GreaterThanOrEqualToThreshold", ignoreCase = true)
 
         return when {
             isGreaterThanOperator && threshold >= 90.0 -> Severity.HIGH

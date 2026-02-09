@@ -1,12 +1,9 @@
 package com.example.incidentanalyst.rag
 
-import com.example.incidentanalyst.incident.Incident
+import com.example.incidentanalyst.common.Either
 import com.example.incidentanalyst.incident.IncidentEntity
 import com.example.incidentanalyst.incident.IncidentId
-import com.example.incidentanalyst.incident.IncidentStatus
-import com.example.incidentanalyst.incident.Severity
 import com.example.incidentanalyst.incident.IncidentRepository
-import com.example.incidentanalyst.runbook.RunbookFragment
 import com.example.incidentanalyst.runbook.RunbookFragmentEntity
 import com.example.incidentanalyst.runbook.RunbookFragmentId
 import com.example.incidentanalyst.runbook.RunbookFragmentRepository
@@ -19,7 +16,6 @@ import io.quarkus.test.junit.QuarkusTest
 import jakarta.inject.Inject
 import org.hibernate.exception.ConstraintViolationException
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -87,8 +83,8 @@ class EmbeddingServiceTest {
         val result = embeddingService.embedIncident(incidentId)
 
         // Assert
-        assertTrue(result is EmbeddingResult.Success)
-        assertEquals(1, (result as EmbeddingResult.Success).count)
+        assertTrue(result is Either.Right)
+        assertEquals(1, (result as Either.Right).value)
         verify(incidentEmbeddingRepository).persist(any<IncidentEmbeddingEntity>())
     }
 
@@ -115,8 +111,8 @@ class EmbeddingServiceTest {
         val result = embeddingService.embedIncident(incidentId)
 
         // Assert
-        assertTrue(result is EmbeddingResult.Failure)
-        val error = (result as EmbeddingResult.Failure).error
+        assertTrue(result is Either.Left)
+        val error = (result as Either.Left).value
         assertTrue(error is EmbeddingError.EmbeddingFailed)
     }
 
@@ -146,8 +142,8 @@ class EmbeddingServiceTest {
         val result = embeddingService.embedIncident(incidentId)
 
         // Assert
-        assertTrue(result is EmbeddingResult.Failure)
-        val error = (result as EmbeddingResult.Failure).error
+        assertTrue(result is Either.Left)
+        val error = (result as Either.Left).value
         assertTrue(error is EmbeddingError.PersistenceError)
     }
 
@@ -172,8 +168,8 @@ class EmbeddingServiceTest {
         val result = embeddingService.embedIncident(incidentId)
 
         // Assert
-        assertTrue(result is EmbeddingResult.Failure)
-        val error = (result as EmbeddingResult.Failure).error
+        assertTrue(result is Either.Left)
+        val error = (result as Either.Left).value
         assertTrue(error is EmbeddingError.InvalidText)
     }
 
@@ -200,8 +196,8 @@ class EmbeddingServiceTest {
         val result = embeddingService.embedIncident(incidentId)
 
         // Assert
-        assertTrue(result is EmbeddingResult.Failure)
-        val error = (result as EmbeddingResult.Failure).error
+        assertTrue(result is Either.Left)
+        val error = (result as Either.Left).value
         assertTrue(error is EmbeddingError.EmbeddingFailed)
     }
 
@@ -215,8 +211,8 @@ class EmbeddingServiceTest {
         val result = embeddingService.embedIncident(incidentId)
 
         // Assert
-        assertTrue(result is EmbeddingResult.Failure)
-        val error = (result as EmbeddingResult.Failure).error
+        assertTrue(result is Either.Left)
+        val error = (result as Either.Left).value
         assertTrue(error is EmbeddingError.Unexpected)
     }
 
@@ -241,8 +237,8 @@ class EmbeddingServiceTest {
         val result = embeddingService.embedRunbook(fragmentId)
 
         // Assert
-        assertTrue(result is EmbeddingResult.Success)
-        assertEquals(1, (result as EmbeddingResult.Success).count)
+        assertTrue(result is Either.Right)
+        assertEquals(1, (result as Either.Right).value)
         verify(runbookEmbeddingRepository).persist(any<RunbookEmbeddingEntity>())
     }
 
@@ -266,8 +262,8 @@ class EmbeddingServiceTest {
         val result = embeddingService.embedRunbook(fragmentId)
 
         // Assert
-        assertTrue(result is EmbeddingResult.Failure)
-        val error = (result as EmbeddingResult.Failure).error
+        assertTrue(result is Either.Left)
+        val error = (result as Either.Left).value
         assertTrue(error is EmbeddingError.EmbeddingFailed)
     }
 
@@ -294,8 +290,8 @@ class EmbeddingServiceTest {
         val result = embeddingService.embedRunbook(fragmentId)
 
         // Assert
-        assertTrue(result is EmbeddingResult.Failure)
-        val error = (result as EmbeddingResult.Failure).error
+        assertTrue(result is Either.Left)
+        val error = (result as Either.Left).value
         assertTrue(error is EmbeddingError.PersistenceError)
     }
 
@@ -317,8 +313,8 @@ class EmbeddingServiceTest {
         val result = embeddingService.embedRunbook(fragmentId)
 
         // Assert
-        assertTrue(result is EmbeddingResult.Failure)
-        val error = (result as EmbeddingResult.Failure).error
+        assertTrue(result is Either.Left)
+        val error = (result as Either.Left).value
         assertTrue(error is EmbeddingError.InvalidText)
     }
 
@@ -332,8 +328,8 @@ class EmbeddingServiceTest {
         val result = embeddingService.embedRunbook(fragmentId)
 
         // Assert
-        assertTrue(result is EmbeddingResult.Failure)
-        val error = (result as EmbeddingResult.Failure).error
+        assertTrue(result is Either.Left)
+        val error = (result as Either.Left).value
         assertTrue(error is EmbeddingError.Unexpected)
     }
 
@@ -397,8 +393,8 @@ class EmbeddingServiceTest {
         )
 
         // Assert
-        assertTrue(result is EmbeddingResult.Success)
-        assertEquals(4, (result as EmbeddingResult.Success).count)
+        assertTrue(result is Either.Right)
+        assertEquals(4, (result as Either.Right).value)
     }
 
     @Test
@@ -442,8 +438,8 @@ class EmbeddingServiceTest {
         )
 
         // Assert
-        assertTrue(result is EmbeddingResult.Success)
-        assertEquals(2, (result as EmbeddingResult.Success).count)
+        assertTrue(result is Either.Right)
+        assertEquals(2, (result as Either.Right).value)
     }
 
     @Test
@@ -455,8 +451,8 @@ class EmbeddingServiceTest {
         )
 
         // Assert
-        assertTrue(result is EmbeddingResult.Success)
-        assertEquals(0, (result as EmbeddingResult.Success).count)
+        assertTrue(result is Either.Right)
+        assertEquals(0, (result as Either.Right).value)
     }
 
     private fun createMockEmbedding(): FloatArray {

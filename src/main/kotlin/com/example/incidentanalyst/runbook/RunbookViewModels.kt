@@ -5,7 +5,13 @@ import java.time.Instant
 data class RunbookListViewModel(
     val runbooks: List<RunbookListItemViewModel>,
     val totalCount: Int,
-    val categories: List<String>
+    val categories: List<String>,
+    val filters: RunbookFiltersViewModel
+)
+
+data class RunbookFiltersViewModel(
+    val query: String? = null,
+    val category: String? = null
 )
 
 data class RunbookListItemViewModel(

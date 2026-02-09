@@ -1,5 +1,6 @@
 package com.example.incidentanalyst.aws
 
+import com.example.incidentanalyst.common.Either
 import io.quarkus.arc.profile.IfBuildProfile
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.enterprise.inject.Alternative
@@ -12,7 +13,7 @@ import java.time.Instant
 @ApplicationScoped
 class MockCloudWatchAlarmClient : CloudWatchAlarmClient {
 
-    override fun listAlarmsInAlarmState(): AlarmQueryResult {
+    override fun listAlarmsInAlarmState(): Either<AwsError, List<AlarmDto>> {
         val timestamp = Instant.now()
 
         val alarms = listOf(
@@ -51,6 +52,6 @@ class MockCloudWatchAlarmClient : CloudWatchAlarmClient {
             )
         )
 
-        return AlarmQueryResult.Success(alarms)
+        return Either.Right(alarms)
     }
 }

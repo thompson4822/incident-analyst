@@ -43,6 +43,7 @@ data class IncidentListItemViewModel(
 )
 
 data class IncidentFiltersViewModel(
+    val query: String? = null,
     val severity: String? = null,
     val status: String? = null,
     val source: String? = null

@@ -1,5 +1,6 @@
 package com.example.incidentanalyst.aws
 
+import com.example.incidentanalyst.common.Either
 import com.example.incidentanalyst.incident.Incident
 import com.example.incidentanalyst.incident.IncidentService
 import com.example.incidentanalyst.incident.Severity
@@ -515,111 +516,89 @@ class CloudWatchIngestionServiceTest {
 
     @Test
     fun `ingestAlarms returns Success when no alarms`() {
-        val queryResult = AlarmQueryResult.Success(emptyList())
+        val queryResult = Either.Right(emptyList<AlarmDto>())
         org.mockito.Mockito.`when`(cloudWatchAlarmClient.listAlarmsInAlarmState())
             .thenReturn(queryResult)
 
         val result = cloudWatchIngestionService.ingestAlarms()
 
-        assertTrue(result is CloudWatchIngestionResult.Success)
-        assertEquals(0, (result as CloudWatchIngestionResult.Success).count)
-    }
-
-    @Test
-    fun `ingestAlarms returns Success with count when alarms exist`() {
-        val alarm = AlarmDto(
-            alarmName = "TestAlarm",
-            alarmDescription = "Test description",
-            stateValue = "ALARM",
-            stateReason = "Test reason",
-            stateUpdatedTimestamp = Instant.now(),
-            metricName = "CPUUtilization",
-            namespace = "AWS/EC2",
-            threshold = "90",
-            comparisonOperator = "GreaterThanThreshold"
-        )
-        val queryResult = AlarmQueryResult.Success(listOf(alarm))
-        org.mockito.Mockito.`when`(cloudWatchAlarmClient.listAlarmsInAlarmState())
-            .thenReturn(queryResult)
-
-        val result = cloudWatchIngestionService.ingestAlarms()
-
-        assertTrue(result is CloudWatchIngestionResult.Success)
-        assertEquals(1, (result as CloudWatchIngestionResult.Success).count)
+        assertTrue(result is Either.Right)
+        val success = (result as Either.Right).value
+        assertTrue(success is IngestionSuccess.NoNewAlarms)
     }
 
     @Test
     fun `ingestAlarms returns Failure on AWS Throttled error`() {
-        val queryResult = AlarmQueryResult.Failure(AwsError.Throttled)
+        val queryResult = Either.Left(AwsError.Throttled)
         org.mockito.Mockito.`when`(cloudWatchAlarmClient.listAlarmsInAlarmState())
             .thenReturn(queryResult)
 
         val result = cloudWatchIngestionService.ingestAlarms()
 
-        assertTrue(result is CloudWatchIngestionResult.Failure)
-        val failure = result as CloudWatchIngestionResult.Failure
-        assertTrue(failure.error is IngestionError.AwsError)
-        val awsError = (failure.error as IngestionError.AwsError).error
+        assertTrue(result is Either.Left)
+        val failure = (result as Either.Left).value
+        assertTrue(failure is IngestionError.AwsError)
+        val awsError = (failure as IngestionError.AwsError).error
         assertTrue(awsError is AwsError.Throttled)
     }
 
     @Test
     fun `ingestAlarms returns Failure on AWS Unauthorized error`() {
-        val queryResult = AlarmQueryResult.Failure(AwsError.Unauthorized)
+        val queryResult = Either.Left(AwsError.Unauthorized)
         org.mockito.Mockito.`when`(cloudWatchAlarmClient.listAlarmsInAlarmState())
             .thenReturn(queryResult)
 
         val result = cloudWatchIngestionService.ingestAlarms()
 
-        assertTrue(result is CloudWatchIngestionResult.Failure)
-        val failure = result as CloudWatchIngestionResult.Failure
-        assertTrue(failure.error is IngestionError.AwsError)
-        val awsError = (failure.error as IngestionError.AwsError).error
+        assertTrue(result is Either.Left)
+        val failure = (result as Either.Left).value
+        assertTrue(failure is IngestionError.AwsError)
+        val awsError = (failure as IngestionError.AwsError).error
         assertTrue(awsError is AwsError.Unauthorized)
     }
 
     @Test
     fun `ingestAlarms returns Failure on AWS NetworkError`() {
-        val queryResult = AlarmQueryResult.Failure(AwsError.NetworkError)
+        val queryResult = Either.Left(AwsError.NetworkError)
         org.mockito.Mockito.`when`(cloudWatchAlarmClient.listAlarmsInAlarmState())
             .thenReturn(queryResult)
 
         val result = cloudWatchIngestionService.ingestAlarms()
 
-        assertTrue(result is CloudWatchIngestionResult.Failure)
-        val failure = result as CloudWatchIngestionResult.Failure
-        assertTrue(failure.error is IngestionError.AwsError)
-        val awsError = (failure.error as IngestionError.AwsError).error
+        assertTrue(result is Either.Left)
+        val failure = (result as Either.Left).value
+        assertTrue(failure is IngestionError.AwsError)
+        val awsError = (failure as IngestionError.AwsError).error
         assertTrue(awsError is AwsError.NetworkError)
     }
 
     @Test
     fun `ingestAlarms returns Failure on AWS ServiceUnavailable`() {
-        val queryResult = AlarmQueryResult.Failure(AwsError.ServiceUnavailable)
+        val queryResult = Either.Left(AwsError.ServiceUnavailable)
         org.mockito.Mockito.`when`(cloudWatchAlarmClient.listAlarmsInAlarmState())
             .thenReturn(queryResult)
 
         val result = cloudWatchIngestionService.ingestAlarms()
 
-        assertTrue(result is CloudWatchIngestionResult.Failure)
-        val failure = result as CloudWatchIngestionResult.Failure
-        assertTrue(failure.error is IngestionError.AwsError)
-        val awsError = (failure.error as IngestionError.AwsError).error
+        assertTrue(result is Either.Left)
+        val failure = (result as Either.Left).value
+        assertTrue(failure is IngestionError.AwsError)
+        val awsError = (failure as IngestionError.AwsError).error
         assertTrue(awsError is AwsError.ServiceUnavailable)
     }
 
     @Test
     fun `ingestAlarms returns Failure on AWS Unknown error`() {
-        val queryResult = AlarmQueryResult.Failure(AwsError.Unknown("Some error"))
+        val queryResult = Either.Left(AwsError.Unknown("Some error"))
         org.mockito.Mockito.`when`(cloudWatchAlarmClient.listAlarmsInAlarmState())
             .thenReturn(queryResult)
 
         val result = cloudWatchIngestionService.ingestAlarms()
 
-        assertTrue(result is CloudWatchIngestionResult.Failure)
-        val failure = result as CloudWatchIngestionResult.Failure
-        assertTrue(failure.error is IngestionError.AwsError)
-        val awsError = (failure.error as IngestionError.AwsError).error
+        assertTrue(result is Either.Left)
+        val failure = (result as Either.Left).value
+        assertTrue(failure is IngestionError.AwsError)
+        val awsError = (failure as IngestionError.AwsError).error
         assertTrue(awsError is AwsError.Unknown)
     }
 
@@ -636,7 +615,7 @@ class CloudWatchIngestionServiceTest {
             threshold = "90",
             comparisonOperator = "GreaterThanThreshold"
         )
-        val queryResult = AlarmQueryResult.Success(listOf(alarm))
+        val queryResult = Either.Right(listOf(alarm))
         org.mockito.Mockito.`when`(cloudWatchAlarmClient.listAlarmsInAlarmState())
             .thenReturn(queryResult)
 
@@ -648,10 +627,10 @@ class CloudWatchIngestionServiceTest {
 
         val result = cloudWatchIngestionService.ingestAlarms()
 
-        assertTrue(result is CloudWatchIngestionResult.Failure)
-        val failure = result as CloudWatchIngestionResult.Failure
-        assertTrue(failure.error is IngestionError.PersistenceError)
-        assertTrue(failure.error.toString().contains("Failed to persist incident"))
+        assertTrue(result is Either.Left)
+        val failure = (result as Either.Left).value
+        assertTrue(failure is IngestionError.PersistenceError)
+        assertTrue(failure.toString().contains("Failed to persist incident"))
     }
 
     @Test
@@ -678,14 +657,16 @@ class CloudWatchIngestionServiceTest {
             threshold = "90",
             comparisonOperator = "GreaterThanThreshold"
         )
-        val queryResult = AlarmQueryResult.Success(listOf(alarm1, alarm2))
+        val queryResult = Either.Right(listOf(alarm1, alarm2))
         org.mockito.Mockito.`when`(cloudWatchAlarmClient.listAlarmsInAlarmState())
             .thenReturn(queryResult)
 
         val result = cloudWatchIngestionService.ingestAlarms()
 
-        assertTrue(result is CloudWatchIngestionResult.Success)
-        assertEquals(1, (result as CloudWatchIngestionResult.Success).count)
+        assertTrue(result is Either.Right)
+        val success = (result as Either.Right).value
+        assertTrue(success is IngestionSuccess.NewIncidentsCreated)
+        assertEquals(1, (success as IngestionSuccess.NewIncidentsCreated).count)
     }
 
     @Test
@@ -712,13 +693,15 @@ class CloudWatchIngestionServiceTest {
             threshold = "90",
             comparisonOperator = "GreaterThanThreshold"
         )
-        val queryResult = AlarmQueryResult.Success(listOf(alarm1, alarm2))
+        val queryResult = Either.Right(listOf(alarm1, alarm2))
         org.mockito.Mockito.`when`(cloudWatchAlarmClient.listAlarmsInAlarmState())
             .thenReturn(queryResult)
 
         val result = cloudWatchIngestionService.ingestAlarms()
 
-        assertTrue(result is CloudWatchIngestionResult.Success)
-        assertEquals(2, (result as CloudWatchIngestionResult.Success).count)
+        assertTrue(result is Either.Right)
+        val success = (result as Either.Right).value
+        assertTrue(success is IngestionSuccess.NewIncidentsCreated)
+        assertEquals(2, (success as IngestionSuccess.NewIncidentsCreated).count)
     }
 }

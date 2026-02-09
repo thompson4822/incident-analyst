@@ -18,11 +18,6 @@ sealed interface RunbookFragmentError {
     data object ValidationFailed : RunbookFragmentError
 }
 
-sealed interface RunbookFragmentResult {
-    data class Success(val fragment: RunbookFragment) : RunbookFragmentResult
-    data class Failure(val error: RunbookFragmentError) : RunbookFragmentResult
-}
-
 fun RunbookFragmentEntity.toDomain(): RunbookFragment =
     RunbookFragment(
         id = RunbookFragmentId(requireNotNull(id)),

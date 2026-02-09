@@ -1,5 +1,6 @@
 package com.example.incidentanalyst.aws
 
+import com.example.incidentanalyst.common.Either
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.inject.Inject
 import software.amazon.awssdk.core.exception.SdkClientException
@@ -7,7 +8,6 @@ import software.amazon.awssdk.core.exception.SdkException
 import software.amazon.awssdk.services.cloudwatch.CloudWatchClient
 import software.amazon.awssdk.services.cloudwatch.model.CloudWatchException
 import software.amazon.awssdk.services.cloudwatch.model.DescribeAlarmsRequest
-import software.amazon.awssdk.services.cloudwatch.model.MetricAlarm
 import software.amazon.awssdk.services.cloudwatch.model.StateValue
 
 @ApplicationScoped
@@ -15,7 +15,7 @@ class AwsCloudWatchAlarmClient @Inject constructor(
     private val cloudWatchClient: CloudWatchClient
 ) : CloudWatchAlarmClient {
 
-    override fun listAlarmsInAlarmState(): AlarmQueryResult {
+    override fun listAlarmsInAlarmState(): Either<AwsError, List<AlarmDto>> {
         return try {
             val alarms = mutableListOf<AlarmDto>()
             var nextToken: String? = null
@@ -44,9 +44,9 @@ class AwsCloudWatchAlarmClient @Inject constructor(
                 nextToken = response.nextToken()
             } while (nextToken != null)
 
-            AlarmQueryResult.Success(alarms)
+            Either.Right(alarms)
         } catch (e: Exception) {
-            AlarmQueryResult.Failure(mapAwsExceptionToError(e))
+            Either.Left(mapAwsExceptionToError(e))
         }
     }
 

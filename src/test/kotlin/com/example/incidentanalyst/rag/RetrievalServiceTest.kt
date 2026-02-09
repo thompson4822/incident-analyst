@@ -1,5 +1,6 @@
 package com.example.incidentanalyst.rag
 
+import com.example.incidentanalyst.common.Either
 import com.example.incidentanalyst.incident.Incident
 import com.example.incidentanalyst.incident.IncidentId
 import com.example.incidentanalyst.incident.IncidentStatus
@@ -21,7 +22,6 @@ import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.eq
 import org.mockito.Mockito.`when`
 import org.mockito.Mockito.reset
-import org.mockito.Mockito.verify
 import java.time.Instant
 
 @QuarkusTest
@@ -87,8 +87,8 @@ class RetrievalServiceTest {
         val result = retrievalService.retrieve(incident)
 
         // Assert
-        assertTrue(result is RetrievalResult.Success)
-        val context = (result as RetrievalResult.Success).context
+        assertTrue(result is Either.Right)
+        val context = (result as Either.Right).value
         assertEquals(3, context.similarIncidents.size)
         assertEquals(2, context.similarRunbooks.size)
         assertTrue(context.query.contains("Database connection failed"))
@@ -115,8 +115,8 @@ class RetrievalServiceTest {
         val result = retrievalService.retrieve(incident)
 
         // Assert
-        assertTrue(result is RetrievalResult.Failure)
-        val error = (result as RetrievalResult.Failure).error
+        assertTrue(result is Either.Left)
+        val error = (result as Either.Left).value
         assertTrue(error is RetrievalError.ModelUnavailable)
     }
 
@@ -156,8 +156,8 @@ class RetrievalServiceTest {
         val result = retrievalService.retrieve(incident)
 
         // Assert
-        assertTrue(result is RetrievalResult.Success)
-        val context = (result as RetrievalResult.Success).context
+        assertTrue(result is Either.Right)
+        val context = (result as Either.Right).value
         assertEquals(0, context.similarIncidents.size)
         assertEquals(0, context.similarRunbooks.size)
     }
@@ -191,8 +191,8 @@ class RetrievalServiceTest {
         val result = retrievalService.retrieve(incident)
 
         // Assert
-        assertTrue(result is RetrievalResult.Failure)
-        val error = (result as RetrievalResult.Failure).error
+        assertTrue(result is Either.Left)
+        val error = (result as Either.Left).value
         assertTrue(error is RetrievalError.SearchFailed)
     }
 
@@ -214,8 +214,8 @@ class RetrievalServiceTest {
         val result = retrievalService.retrieve(incident)
 
         // Assert
-        assertTrue(result is RetrievalResult.Failure)
-        val error = (result as RetrievalResult.Failure).error
+        assertTrue(result is Either.Left)
+        val error = (result as Either.Left).value
         assertTrue(error is RetrievalError.InvalidQuery)
     }
 
@@ -254,8 +254,8 @@ class RetrievalServiceTest {
         val result = retrievalService.retrieveForRunbook(fragment)
 
         // Assert
-        assertTrue(result is RetrievalResult.Success)
-        val context = (result as RetrievalResult.Success).context
+        assertTrue(result is Either.Right)
+        val context = (result as Either.Right).value
         assertEquals(2, context.similarIncidents.size)
         assertEquals(2, context.similarRunbooks.size)
         assertTrue(context.query.contains("Database connection troubleshooting"))
@@ -294,8 +294,8 @@ class RetrievalServiceTest {
         val result = retrievalService.retrieveForRunbook(fragment)
 
         // Assert
-        assertTrue(result is RetrievalResult.Success)
-        val context = (result as RetrievalResult.Success).context
+        assertTrue(result is Either.Right)
+        val context = (result as Either.Right).value
         assertEquals(0, context.similarIncidents.size)
         assertEquals(0, context.similarRunbooks.size)
     }
@@ -326,8 +326,8 @@ class RetrievalServiceTest {
         val result = retrievalService.retrieveForRunbook(fragment)
 
         // Assert
-        assertTrue(result is RetrievalResult.Failure)
-        val error = (result as RetrievalResult.Failure).error
+        assertTrue(result is Either.Left)
+        val error = (result as Either.Left).value
         assertTrue(error is RetrievalError.SearchFailed)
     }
 
@@ -346,8 +346,8 @@ class RetrievalServiceTest {
         val result = retrievalService.retrieveForRunbook(fragment)
 
         // Assert
-        assertTrue(result is RetrievalResult.Failure)
-        val error = (result as RetrievalResult.Failure).error
+        assertTrue(result is Either.Left)
+        val error = (result as Either.Left).value
         assertTrue(error is RetrievalError.InvalidQuery)
     }
 
@@ -388,8 +388,8 @@ class RetrievalServiceTest {
         val result = retrievalService.retrieve(incident)
 
         // Assert
-        assertTrue(result is RetrievalResult.Success)
-        val context = (result as RetrievalResult.Success).context
+        assertTrue(result is Either.Right)
+        val context = (result as Either.Right).value
         val match = context.similarIncidents[0]
         assertNotNull(match.score)
         assertNotNull(match.snippet)
@@ -441,8 +441,8 @@ class RetrievalServiceTest {
         val result = retrievalService.retrieve(incident)
 
         // Assert
-        assertTrue(result is RetrievalResult.Success)
-        val context = (result as RetrievalResult.Success).context
+        assertTrue(result is Either.Right)
+        val context = (result as Either.Right).value
         val match = context.similarIncidents[0]
         assertTrue(match.snippet!!.length <= 200)
     }
@@ -492,8 +492,8 @@ class RetrievalServiceTest {
         val result = retrievalService.retrieve(incident)
 
         // Assert
-        assertTrue(result is RetrievalResult.Success)
-        val context = (result as RetrievalResult.Success).context
+        assertTrue(result is Either.Right)
+        val context = (result as Either.Right).value
         val match = context.similarIncidents[0]
         assertEquals(similarity, match.score.value, 0.001)
     }

@@ -1,9 +1,9 @@
 package com.example.incidentanalyst.aws
 
+import com.example.incidentanalyst.common.Either
 import com.example.incidentanalyst.incident.Incident
 import com.example.incidentanalyst.incident.IncidentId
 import com.example.incidentanalyst.incident.IncidentRepository
-import com.example.incidentanalyst.incident.IncidentResult
 import com.example.incidentanalyst.incident.IncidentService
 import com.example.incidentanalyst.incident.Severity
 import io.quarkus.test.InjectMock
@@ -57,15 +57,16 @@ class CloudWatchIngestionIntegrationTest {
             comparisonOperator = "GreaterThanOrEqualToThreshold"
         )
 
-        val queryResult = AlarmQueryResult.Success(listOf(alarm))
+        val queryResult = Either.Right(listOf(alarm))
         Mockito.`when`(cloudWatchAlarmClient.listAlarmsInAlarmState())
             .thenReturn(queryResult)
 
         val result = cloudWatchIngestionService.ingestAlarms()
 
-        assertTrue(result is CloudWatchIngestionResult.Success)
-        val successResult = result as CloudWatchIngestionResult.Success
-        assertEquals(1, successResult.count)
+        assertTrue(result is Either.Right)
+        val success = (result as Either.Right).value
+        assertTrue(success is IngestionSuccess.NewIncidentsCreated)
+        assertEquals(1, (success as IngestionSuccess.NewIncidentsCreated).count)
 
         // Verify database persistence
         val allIncidents = incidentRepository.listAll()
@@ -129,15 +130,16 @@ class CloudWatchIngestionIntegrationTest {
             )
         )
 
-        val queryResult = AlarmQueryResult.Success(alarms)
+        val queryResult = Either.Right(alarms)
         Mockito.`when`(cloudWatchAlarmClient.listAlarmsInAlarmState())
             .thenReturn(queryResult)
 
         val result = cloudWatchIngestionService.ingestAlarms()
 
-        assertTrue(result is CloudWatchIngestionResult.Success)
-        val successResult = result as CloudWatchIngestionResult.Success
-        assertEquals(3, successResult.count)
+        assertTrue(result is Either.Right)
+        val success = (result as Either.Right).value
+        assertTrue(success is IngestionSuccess.NewIncidentsCreated)
+        assertEquals(3, (success as IngestionSuccess.NewIncidentsCreated).count)
 
         // Verify all incidents persisted with unique IDs
         val allIncidents = incidentRepository.listAll()
@@ -200,15 +202,16 @@ class CloudWatchIngestionIntegrationTest {
             )
         )
 
-        val queryResult = AlarmQueryResult.Success(alarms)
+        val queryResult = Either.Right(alarms)
         Mockito.`when`(cloudWatchAlarmClient.listAlarmsInAlarmState())
             .thenReturn(queryResult)
 
         val result = cloudWatchIngestionService.ingestAlarms()
 
-        assertTrue(result is CloudWatchIngestionResult.Success)
-        val successResult = result as CloudWatchIngestionResult.Success
-        assertEquals(1, successResult.count, "Only ALARM state should create incidents")
+        assertTrue(result is Either.Right)
+        val success = (result as Either.Right).value
+        assertTrue(success is IngestionSuccess.NewIncidentsCreated)
+        assertEquals(1, (success as IngestionSuccess.NewIncidentsCreated).count, "Only ALARM state should create incidents")
 
         // Verify only ALARM state incident was persisted
         val allIncidents = incidentRepository.listAll()
@@ -219,15 +222,15 @@ class CloudWatchIngestionIntegrationTest {
     @Test
     @Transactional
     fun `ingestAlarms handles empty alarm list`() {
-        val queryResult = AlarmQueryResult.Success(emptyList())
+        val queryResult = Either.Right(emptyList<AlarmDto>())
         Mockito.`when`(cloudWatchAlarmClient.listAlarmsInAlarmState())
             .thenReturn(queryResult)
 
         val result = cloudWatchIngestionService.ingestAlarms()
 
-        assertTrue(result is CloudWatchIngestionResult.Success)
-        val successResult = result as CloudWatchIngestionResult.Success
-        assertEquals(0, successResult.count)
+        assertTrue(result is Either.Right)
+        val success = (result as Either.Right).value
+        assertTrue(success is IngestionSuccess.NoNewAlarms)
 
         // Verify no incidents were persisted
         val allIncidents = incidentRepository.listAll()
@@ -237,16 +240,16 @@ class CloudWatchIngestionIntegrationTest {
     @Test
     @Transactional
     fun `ingestAlarms returns Failure for AWS Throttled error`() {
-        val queryResult = AlarmQueryResult.Failure(AwsError.Throttled)
+        val queryResult = Either.Left(AwsError.Throttled)
         Mockito.`when`(cloudWatchAlarmClient.listAlarmsInAlarmState())
             .thenReturn(queryResult)
 
         val result = cloudWatchIngestionService.ingestAlarms()
 
-        assertTrue(result is CloudWatchIngestionResult.Failure)
-        val failure = result as CloudWatchIngestionResult.Failure
-        assertTrue(failure.error is IngestionError.AwsError)
-        val awsError = (failure.error as IngestionError.AwsError).error
+        assertTrue(result is Either.Left)
+        val failure = (result as Either.Left).value
+        assertTrue(failure is IngestionError.AwsError)
+        val awsError = (failure as IngestionError.AwsError).error
         assertTrue(awsError is AwsError.Throttled)
 
         // Verify no incidents were persisted
@@ -257,16 +260,16 @@ class CloudWatchIngestionIntegrationTest {
     @Test
     @Transactional
     fun `ingestAlarms returns Failure for AWS Unauthorized error`() {
-        val queryResult = AlarmQueryResult.Failure(AwsError.Unauthorized)
+        val queryResult = Either.Left(AwsError.Unauthorized)
         Mockito.`when`(cloudWatchAlarmClient.listAlarmsInAlarmState())
             .thenReturn(queryResult)
 
         val result = cloudWatchIngestionService.ingestAlarms()
 
-        assertTrue(result is CloudWatchIngestionResult.Failure)
-        val failure = result as CloudWatchIngestionResult.Failure
-        assertTrue(failure.error is IngestionError.AwsError)
-        val awsError = (failure.error as IngestionError.AwsError).error
+        assertTrue(result is Either.Left)
+        val failure = (result as Either.Left).value
+        assertTrue(failure is IngestionError.AwsError)
+        val awsError = (failure as IngestionError.AwsError).error
         assertTrue(awsError is AwsError.Unauthorized)
 
         val allIncidents = incidentRepository.listAll()
@@ -276,16 +279,16 @@ class CloudWatchIngestionIntegrationTest {
     @Test
     @Transactional
     fun `ingestAlarms returns Failure for AWS NetworkError`() {
-        val queryResult = AlarmQueryResult.Failure(AwsError.NetworkError)
+        val queryResult = Either.Left(AwsError.NetworkError)
         Mockito.`when`(cloudWatchAlarmClient.listAlarmsInAlarmState())
             .thenReturn(queryResult)
 
         val result = cloudWatchIngestionService.ingestAlarms()
 
-        assertTrue(result is CloudWatchIngestionResult.Failure)
-        val failure = result as CloudWatchIngestionResult.Failure
-        assertTrue(failure.error is IngestionError.AwsError)
-        val awsError = (failure.error as IngestionError.AwsError).error
+        assertTrue(result is Either.Left)
+        val failure = (result as Either.Left).value
+        assertTrue(failure is IngestionError.AwsError)
+        val awsError = (failure as IngestionError.AwsError).error
         assertTrue(awsError is AwsError.NetworkError)
 
         val allIncidents = incidentRepository.listAll()
@@ -295,16 +298,16 @@ class CloudWatchIngestionIntegrationTest {
     @Test
     @Transactional
     fun `ingestAlarms returns Failure for AWS ServiceUnavailable`() {
-        val queryResult = AlarmQueryResult.Failure(AwsError.ServiceUnavailable)
+        val queryResult = Either.Left(AwsError.ServiceUnavailable)
         Mockito.`when`(cloudWatchAlarmClient.listAlarmsInAlarmState())
             .thenReturn(queryResult)
 
         val result = cloudWatchIngestionService.ingestAlarms()
 
-        assertTrue(result is CloudWatchIngestionResult.Failure)
-        val failure = result as CloudWatchIngestionResult.Failure
-        assertTrue(failure.error is IngestionError.AwsError)
-        val awsError = (failure.error as IngestionError.AwsError).error
+        assertTrue(result is Either.Left)
+        val failure = (result as Either.Left).value
+        assertTrue(failure is IngestionError.AwsError)
+        val awsError = (failure as IngestionError.AwsError).error
         assertTrue(awsError is AwsError.ServiceUnavailable)
 
         val allIncidents = incidentRepository.listAll()
@@ -314,16 +317,16 @@ class CloudWatchIngestionIntegrationTest {
     @Test
     @Transactional
     fun `ingestAlarms returns Failure for AWS Unknown error`() {
-        val queryResult = AlarmQueryResult.Failure(AwsError.Unknown("Service error"))
+        val queryResult = Either.Left(AwsError.Unknown("Service error"))
         Mockito.`when`(cloudWatchAlarmClient.listAlarmsInAlarmState())
             .thenReturn(queryResult)
 
         val result = cloudWatchIngestionService.ingestAlarms()
 
-        assertTrue(result is CloudWatchIngestionResult.Failure)
-        val failure = result as CloudWatchIngestionResult.Failure
-        assertTrue(failure.error is IngestionError.AwsError)
-        val awsError = (failure.error as IngestionError.AwsError).error
+        assertTrue(result is Either.Left)
+        val failure = (result as Either.Left).value
+        assertTrue(failure is IngestionError.AwsError)
+        val awsError = (failure as IngestionError.AwsError).error
         assertTrue(awsError is AwsError.Unknown)
 
         val allIncidents = incidentRepository.listAll()
@@ -359,15 +362,16 @@ class CloudWatchIngestionIntegrationTest {
             )
         )
 
-        val queryResult = AlarmQueryResult.Success(alarms)
+        val queryResult = Either.Right(alarms)
         Mockito.`when`(cloudWatchAlarmClient.listAlarmsInAlarmState())
             .thenReturn(queryResult)
 
         val result = cloudWatchIngestionService.ingestAlarms()
 
-        assertTrue(result is CloudWatchIngestionResult.Success)
-        val successResult = result as CloudWatchIngestionResult.Success
-        assertEquals(2, successResult.count)
+        assertTrue(result is Either.Right)
+        val success = (result as Either.Right).value
+        assertTrue(success is IngestionSuccess.NewIncidentsCreated)
+        assertEquals(2, (success as IngestionSuccess.NewIncidentsCreated).count)
 
         val allIncidents = incidentRepository.listAll()
         assertEquals(2, allIncidents.size)
@@ -424,14 +428,16 @@ class CloudWatchIngestionIntegrationTest {
             )
         )
 
-        val queryResult = AlarmQueryResult.Success(alarms)
+        val queryResult = Either.Right(alarms)
         Mockito.`when`(cloudWatchAlarmClient.listAlarmsInAlarmState())
             .thenReturn(queryResult)
 
         val result = cloudWatchIngestionService.ingestAlarms()
 
-        assertTrue(result is CloudWatchIngestionResult.Success)
-        assertEquals(4, (result as CloudWatchIngestionResult.Success).count)
+        assertTrue(result is Either.Right)
+        val success = (result as Either.Right).value
+        assertTrue(success is IngestionSuccess.NewIncidentsCreated)
+        assertEquals(4, (success as IngestionSuccess.NewIncidentsCreated).count)
 
         val allIncidents = incidentRepository.listAll()
         assertEquals(4, allIncidents.size)
@@ -482,14 +488,16 @@ class CloudWatchIngestionIntegrationTest {
             )
         )
 
-        val queryResult = AlarmQueryResult.Success(alarms)
+        val queryResult = Either.Right(alarms)
         Mockito.`when`(cloudWatchAlarmClient.listAlarmsInAlarmState())
             .thenReturn(queryResult)
 
         val result = cloudWatchIngestionService.ingestAlarms()
 
-        assertTrue(result is CloudWatchIngestionResult.Success)
-        assertEquals(2, (result as CloudWatchIngestionResult.Success).count)
+        assertTrue(result is Either.Right)
+        val success = (result as Either.Right).value
+        assertTrue(success is IngestionSuccess.NewIncidentsCreated)
+        assertEquals(2, (success as IngestionSuccess.NewIncidentsCreated).count)
 
         val allIncidents = incidentRepository.listAll()
         assertEquals(2, allIncidents.size)
@@ -513,13 +521,16 @@ class CloudWatchIngestionIntegrationTest {
             comparisonOperator = "GreaterThanThreshold"
         )
 
-        val queryResult = AlarmQueryResult.Success(listOf(alarm))
+        val queryResult = Either.Right(listOf(alarm))
         Mockito.`when`(cloudWatchAlarmClient.listAlarmsInAlarmState())
             .thenReturn(queryResult)
 
         val result = cloudWatchIngestionService.ingestAlarms()
 
-        assertTrue(result is CloudWatchIngestionResult.Success)
+        assertTrue(result is Either.Right)
+        val success = (result as Either.Right).value
+        assertTrue(success is IngestionSuccess.NewIncidentsCreated)
+        
         val afterTest = Instant.now()
 
         val allIncidents = incidentRepository.listAll()
@@ -546,13 +557,15 @@ class CloudWatchIngestionIntegrationTest {
             comparisonOperator = "GreaterThanThreshold"
         )
 
-        val queryResult = AlarmQueryResult.Success(listOf(alarm))
+        val queryResult = Either.Right(listOf(alarm))
         Mockito.`when`(cloudWatchAlarmClient.listAlarmsInAlarmState())
             .thenReturn(queryResult)
 
         val result = cloudWatchIngestionService.ingestAlarms()
 
-        assertTrue(result is CloudWatchIngestionResult.Success)
+        assertTrue(result is Either.Right)
+        val success = (result as Either.Right).value
+        assertTrue(success is IngestionSuccess.NewIncidentsCreated)
 
         val allIncidents = incidentRepository.listAll()
         assertEquals(1, allIncidents.size)
@@ -588,14 +601,16 @@ class CloudWatchIngestionIntegrationTest {
             )
         )
 
-        val queryResult = AlarmQueryResult.Success(alarms)
+        val queryResult = Either.Right(alarms)
         Mockito.`when`(cloudWatchAlarmClient.listAlarmsInAlarmState())
             .thenReturn(queryResult)
 
         val result = cloudWatchIngestionService.ingestAlarms()
 
-        assertTrue(result is CloudWatchIngestionResult.Success)
-        assertEquals(2, (result as CloudWatchIngestionResult.Success).count)
+        assertTrue(result is Either.Right)
+        val success = (result as Either.Right).value
+        assertTrue(success is IngestionSuccess.NewIncidentsCreated)
+        assertEquals(2, (success as IngestionSuccess.NewIncidentsCreated).count)
 
         val allIncidents = incidentRepository.listAll()
         assertEquals(2, allIncidents.size)
@@ -625,13 +640,15 @@ class CloudWatchIngestionIntegrationTest {
             comparisonOperator = "LessThanThreshold"
         )
 
-        val queryResult = AlarmQueryResult.Success(listOf(alarm))
+        val queryResult = Either.Right(listOf(alarm))
         Mockito.`when`(cloudWatchAlarmClient.listAlarmsInAlarmState())
             .thenReturn(queryResult)
 
         val result = cloudWatchIngestionService.ingestAlarms()
 
-        assertTrue(result is CloudWatchIngestionResult.Success)
+        assertTrue(result is Either.Right)
+        val success = (result as Either.Right).value
+        assertTrue(success is IngestionSuccess.NewIncidentsCreated)
 
         val allIncidents = incidentRepository.listAll()
         assertEquals(1, allIncidents.size)
@@ -662,13 +679,15 @@ class CloudWatchIngestionIntegrationTest {
             comparisonOperator = null
         )
 
-        val queryResult = AlarmQueryResult.Success(listOf(alarm))
+        val queryResult = Either.Right(listOf(alarm))
         Mockito.`when`(cloudWatchAlarmClient.listAlarmsInAlarmState())
             .thenReturn(queryResult)
 
         val result = cloudWatchIngestionService.ingestAlarms()
 
-        assertTrue(result is CloudWatchIngestionResult.Success)
+        assertTrue(result is Either.Right)
+        val success = (result as Either.Right).value
+        assertTrue(success is IngestionSuccess.NewIncidentsCreated)
 
         val allIncidents = incidentRepository.listAll()
         assertEquals(1, allIncidents.size)
@@ -702,14 +721,16 @@ class CloudWatchIngestionIntegrationTest {
             comparisonOperator = "GreaterThanThreshold"
         )
 
-        val queryResult = AlarmQueryResult.Success(listOf(alarm))
+        val queryResult = Either.Right(listOf(alarm))
         Mockito.`when`(cloudWatchAlarmClient.listAlarmsInAlarmState())
             .thenReturn(queryResult)
 
         val result = cloudWatchIngestionService.ingestAlarms()
 
-        assertTrue(result is CloudWatchIngestionResult.Success)
-        assertEquals(1, (result as CloudWatchIngestionResult.Success).count)
+        assertTrue(result is Either.Right)
+        val success = (result as Either.Right).value
+        assertTrue(success is IngestionSuccess.NewIncidentsCreated)
+        assertEquals(1, (success as IngestionSuccess.NewIncidentsCreated).count)
 
         // Get all incidents to find the ID
         val allIncidents = incidentRepository.listAll()
@@ -719,9 +740,9 @@ class CloudWatchIngestionIntegrationTest {
 
         // Verify incident can be retrieved via incidentService
         val retrieved = incidentService.getById(incidentId)
-        assertTrue(retrieved is IncidentResult.Success)
+        assertTrue(retrieved is Either.Right)
 
-        val incident = (retrieved as IncidentResult.Success).incident
+        val incident = (retrieved as Either.Right).value
         assertEquals("RetrievableAlarm", incident.title)
         assertEquals("cloudwatch", incident.source)
         assertEquals(Severity.HIGH, incident.severity)
@@ -744,14 +765,16 @@ class CloudWatchIngestionIntegrationTest {
             comparisonOperator = "GreaterThanThreshold"
         )
 
-        val queryResult1 = AlarmQueryResult.Success(listOf(alarm1))
+        val queryResult1 = Either.Right(listOf(alarm1))
         Mockito.`when`(cloudWatchAlarmClient.listAlarmsInAlarmState())
             .thenReturn(queryResult1)
 
         // First ingestion
         val result1 = cloudWatchIngestionService.ingestAlarms()
-        assertTrue(result1 is CloudWatchIngestionResult.Success)
-        assertEquals(1, (result1 as CloudWatchIngestionResult.Success).count)
+        assertTrue(result1 is Either.Right)
+        val success1 = (result1 as Either.Right).value
+        assertTrue(success1 is IngestionSuccess.NewIncidentsCreated)
+        assertEquals(1, (success1 as IngestionSuccess.NewIncidentsCreated).count)
         assertEquals(1, incidentRepository.count())
 
         // Second ingestion with different alarm
@@ -768,14 +791,16 @@ class CloudWatchIngestionIntegrationTest {
             comparisonOperator = "GreaterThanThreshold"
         )
 
-        val queryResult2 = AlarmQueryResult.Success(listOf(alarm2))
+        val queryResult2 = Either.Right(listOf(alarm2))
         Mockito.`when`(cloudWatchAlarmClient.listAlarmsInAlarmState())
             .thenReturn(queryResult2)
 
         // Second ingestion
         val result2 = cloudWatchIngestionService.ingestAlarms()
-        assertTrue(result2 is CloudWatchIngestionResult.Success)
-        assertEquals(1, (result2 as CloudWatchIngestionResult.Success).count)
+        assertTrue(result2 is Either.Right)
+        val success2 = (result2 as Either.Right).value
+        assertTrue(success2 is IngestionSuccess.NewIncidentsCreated)
+        assertEquals(1, (success2 as IngestionSuccess.NewIncidentsCreated).count)
 
         // Verify both incidents exist
         val allIncidents = incidentRepository.listAll()
@@ -802,13 +827,15 @@ class CloudWatchIngestionIntegrationTest {
             comparisonOperator = "GreaterThanThreshold"
         )
 
-        val queryResult = AlarmQueryResult.Success(listOf(alarm))
+        val queryResult = Either.Right(listOf(alarm))
         Mockito.`when`(cloudWatchAlarmClient.listAlarmsInAlarmState())
             .thenReturn(queryResult)
 
         val result = cloudWatchIngestionService.ingestAlarms()
 
-        assertTrue(result is CloudWatchIngestionResult.Success)
+        assertTrue(result is Either.Right)
+        val success = (result as Either.Right).value
+        assertTrue(success is IngestionSuccess.NewIncidentsCreated)
 
         val allIncidents = incidentRepository.listAll()
         assertEquals(1, allIncidents.size)
@@ -834,7 +861,7 @@ class CloudWatchIngestionIntegrationTest {
             comparisonOperator = "GreaterThanThreshold"
         )
 
-        val queryResult = AlarmQueryResult.Success(listOf(alarm))
+        val queryResult = Either.Right(listOf(alarm))
         Mockito.`when`(cloudWatchAlarmClient.listAlarmsInAlarmState())
             .thenReturn(queryResult)
 

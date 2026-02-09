@@ -1,10 +1,10 @@
 package com.example.incidentanalyst.runbook
 
+import com.example.incidentanalyst.common.Either
 import io.quarkus.test.InjectMock
 import io.quarkus.test.junit.QuarkusTest
 import jakarta.inject.Inject
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -114,8 +114,8 @@ class RunbookServiceTest {
         val result = runbookService.getById(RunbookFragmentId(testId))
 
         // Assert
-        assertTrue(result is RunbookFragmentResult.Success)
-        val fragment = (result as RunbookFragmentResult.Success).fragment
+        assertTrue(result is Either.Right)
+        val fragment = (result as Either.Right).value
         assertEquals(testId, fragment.id.value)
         assertEquals("Test Fragment", fragment.title)
         assertEquals("Test content with details", fragment.content)
@@ -132,8 +132,8 @@ class RunbookServiceTest {
         val result = runbookService.getById(RunbookFragmentId(testId))
 
         // Assert
-        assertTrue(result is RunbookFragmentResult.Failure)
-        val error = (result as RunbookFragmentResult.Failure).error
+        assertTrue(result is Either.Left)
+        val error = (result as Either.Left).value
         assertTrue(error is RunbookFragmentError.NotFound)
     }
 
@@ -160,8 +160,8 @@ class RunbookServiceTest {
         )
 
         // Assert
-        assertTrue(result is RunbookFragmentResult.Success)
-        val fragment = (result as RunbookFragmentResult.Success).fragment
+        assertTrue(result is Either.Right)
+        val fragment = (result as Either.Right).value
         assertEquals("Updated Title", fragment.title)
         assertEquals("Updated Content", fragment.content)
         assertEquals("new,tag", fragment.tags)
@@ -185,8 +185,8 @@ class RunbookServiceTest {
         )
 
         // Assert
-        assertTrue(result is RunbookFragmentResult.Failure)
-        val error = (result as RunbookFragmentResult.Failure).error
+        assertTrue(result is Either.Left)
+        val error = (result as Either.Left).value
         assertTrue(error is RunbookFragmentError.NotFound)
     }
 
@@ -213,8 +213,8 @@ class RunbookServiceTest {
         )
 
         // Assert
-        assertTrue(result is RunbookFragmentResult.Failure)
-        val error = (result as RunbookFragmentResult.Failure).error
+        assertTrue(result is Either.Left)
+        val error = (result as Either.Left).value
         assertTrue(error is RunbookFragmentError.ValidationFailed)
     }
 
@@ -241,8 +241,8 @@ class RunbookServiceTest {
         )
 
         // Assert
-        assertTrue(result is RunbookFragmentResult.Failure)
-        val error = (result as RunbookFragmentResult.Failure).error
+        assertTrue(result is Either.Left)
+        val error = (result as Either.Left).value
         assertTrue(error is RunbookFragmentError.ValidationFailed)
     }
 
@@ -269,8 +269,8 @@ class RunbookServiceTest {
         )
 
         // Assert
-        assertTrue(result is RunbookFragmentResult.Failure)
-        val error = (result as RunbookFragmentResult.Failure).error
+        assertTrue(result is Either.Left)
+        val error = (result as Either.Left).value
         assertTrue(error is RunbookFragmentError.ValidationFailed)
     }
 
@@ -297,8 +297,8 @@ class RunbookServiceTest {
         )
 
         // Assert
-        assertTrue(result is RunbookFragmentResult.Success)
-        val fragment = (result as RunbookFragmentResult.Success).fragment
+        assertTrue(result is Either.Right)
+        val fragment = (result as Either.Right).value
         assertEquals(null, fragment.tags)
         assertEquals(null, entity.tags)
     }

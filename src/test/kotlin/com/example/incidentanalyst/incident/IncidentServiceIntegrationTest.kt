@@ -1,5 +1,6 @@
 package com.example.incidentanalyst.incident
 
+import com.example.incidentanalyst.common.Either
 import io.quarkus.test.junit.QuarkusTest
 import jakarta.inject.Inject
 import jakarta.transaction.Transactional
@@ -180,8 +181,8 @@ class IncidentServiceIntegrationTest {
         val created = incidentService.create(incident)
         val retrieved = incidentService.getById(created.id)
 
-        assertTrue(retrieved is IncidentResult.Success)
-        val retrievedIncident = (retrieved as IncidentResult.Success).incident
+        assertTrue(retrieved is Either.Right)
+        val retrievedIncident = (retrieved as Either.Right).value
         assertEquals(created.id.value, retrievedIncident.id.value)
         assertEquals("Test Incident", retrievedIncident.title)
         assertEquals("Test description", retrievedIncident.description)

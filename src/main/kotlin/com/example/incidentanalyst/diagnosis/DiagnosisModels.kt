@@ -35,9 +35,9 @@ sealed interface DiagnosisError {
     data object UpdateFailed : DiagnosisError
 }
 
-sealed interface DiagnosisResult {
-    data class Success(val diagnosis: Diagnosis) : DiagnosisResult
-    data class Failure(val error: DiagnosisError) : DiagnosisResult
+sealed interface DiagnosisSuccess {
+    data class NewDiagnosisGenerated(val diagnosis: Diagnosis) : DiagnosisSuccess
+    data class ExistingDiagnosisFound(val diagnosis: Diagnosis) : DiagnosisSuccess
 }
 
 fun DiagnosisEntity.toDomain(): Diagnosis =

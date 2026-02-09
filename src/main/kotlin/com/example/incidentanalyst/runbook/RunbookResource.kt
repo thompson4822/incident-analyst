@@ -19,6 +19,8 @@ import jakarta.ws.rs.core.MediaType
 import jakarta.ws.rs.core.Response
 import java.time.Instant
 
+import jakarta.ws.rs.*
+
 @Path("/runbooks")
 class RunbookResource(
     private val runbookService: RunbookService
@@ -35,13 +37,17 @@ class RunbookResource(
     @GET
     @Produces(MediaType.TEXT_HTML, MediaType.APPLICATION_JSON)
     @Blocking
-    fun list(@Context headers: HttpHeaders): Response {
-        val runbooks = runbookService.listRecent()
+    fun list(
+        @Context headers: HttpHeaders,
+        @QueryParam("q") query: String?,
+        @QueryParam("category") category: String?
+    ): Response {
+        val runbooks = runbookService.search(query, category)
         
         // Check if client prefers HTML
         val acceptHeader = headers.acceptableMediaTypes
         if (acceptHeader.any { it.isCompatible(MediaType.TEXT_HTML_TYPE) }) {
-            val viewModel = mapToListViewModel(runbooks)
+            val viewModel = mapToListViewModel(runbooks, query, category)
             return Response.ok(listTemplate.data("model", viewModel))
                 .type(MediaType.TEXT_HTML)
                 .build()
@@ -58,26 +64,23 @@ class RunbookResource(
     @Blocking
     fun getById(@PathParam("id") id: Long, @Context headers: HttpHeaders): Response {
         val fragmentId = RunbookFragmentId(id)
-        val result = runbookService.getById(fragmentId)
-        
-        if (result is RunbookFragmentResult.Failure) {
-            return Response.status(Response.Status.NOT_FOUND).build()
-        }
-        
-        val fragment = (result as RunbookFragmentResult.Success).fragment
-        
-        // Check if client prefers HTML
-        val acceptHeader = headers.acceptableMediaTypes
-        if (acceptHeader.any { it.isCompatible(MediaType.TEXT_HTML_TYPE) }) {
-            val viewModel = mapToDetailViewModel(fragment)
-            return Response.ok(editTemplate.data("runbook", viewModel))
-                .type(MediaType.TEXT_HTML)
-                .build()
-        }
-        
-        return Response.ok(fragment.toResponseDto())
-            .type(MediaType.APPLICATION_JSON)
-            .build()
+        return runbookService.getById(fragmentId).fold(
+            ifLeft = { Response.status(Response.Status.NOT_FOUND).build() },
+            ifRight = { fragment ->
+                // Check if client prefers HTML
+                val acceptHeader = headers.acceptableMediaTypes
+                if (acceptHeader.any { it.isCompatible(MediaType.TEXT_HTML_TYPE) }) {
+                    val viewModel = mapToDetailViewModel(fragment)
+                    Response.ok(editTemplate.data("runbook", viewModel))
+                        .type(MediaType.TEXT_HTML)
+                        .build()
+                } else {
+                    Response.ok(fragment.toResponseDto())
+                        .type(MediaType.APPLICATION_JSON)
+                        .build()
+                }
+            }
+        )
     }
 
     @POST
@@ -99,19 +102,27 @@ class RunbookResource(
         request: RunbookFragmentUpdateRequestDto
     ): Response {
         val fragmentId = RunbookFragmentId(id)
-        return when (val result = runbookService.updateFragment(fragmentId, request.title, request.content, request.tags)) {
-            is RunbookFragmentResult.Success -> Response.ok(result.fragment.toResponseDto()).build()
-            is RunbookFragmentResult.Failure -> when (result.error) {
-                is RunbookFragmentError.NotFound -> Response.status(Response.Status.NOT_FOUND).build()
-                is RunbookFragmentError.ValidationFailed -> Response.status(Response.Status.BAD_REQUEST)
-                    .type(MediaType.APPLICATION_JSON)
-                    .entity(mapOf("error" to "Invalid request data"))
-                    .build()
+        return runbookService.updateFragment(fragmentId, request.title, request.content, request.tags).fold(
+            ifLeft = { error ->
+                when (error) {
+                    is RunbookFragmentError.NotFound -> Response.status(Response.Status.NOT_FOUND).build()
+                    is RunbookFragmentError.ValidationFailed -> Response.status(Response.Status.BAD_REQUEST)
+                        .type(MediaType.APPLICATION_JSON)
+                        .entity(mapOf("error" to "Invalid request data"))
+                        .build()
+                }
+            },
+            ifRight = { fragment ->
+                Response.ok(fragment.toResponseDto()).build()
             }
-        }
+        )
     }
 
-    private fun mapToListViewModel(runbooks: List<RunbookFragment>): RunbookListViewModel {
+    private fun mapToListViewModel(
+        runbooks: List<RunbookFragment>,
+        query: String? = null,
+        category: String? = null
+    ): RunbookListViewModel {
         val items = runbooks.map { fragment ->
             RunbookListItemViewModel(
                 id = fragment.id.value,
@@ -129,7 +140,8 @@ class RunbookResource(
         return RunbookListViewModel(
             runbooks = items,
             totalCount = runbooks.size,
-            categories = listOf("Network", "Database", "Application", "Security")
+            categories = listOf("Network", "Database", "Application", "Security"),
+            filters = RunbookFiltersViewModel(query, category)
         )
     }
 

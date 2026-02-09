@@ -1,5 +1,6 @@
 package com.example.incidentanalyst.rag
 
+import com.example.incidentanalyst.common.Either
 import com.example.incidentanalyst.incident.Incident
 import com.example.incidentanalyst.incident.IncidentEntity
 import com.example.incidentanalyst.incident.IncidentId
@@ -85,8 +86,8 @@ class EmbeddingServiceIntegrationTest {
         val result = embeddingService.embedIncident(incidentId)
 
         // Assert
-        assertTrue(result is EmbeddingResult.Success)
-        assertEquals(1, (result as EmbeddingResult.Success).count)
+        assertTrue(result is Either.Right)
+        assertEquals(1, (result as Either.Right).value)
 
         // Verify embedding persisted
         val embeddings = incidentEmbeddingRepository.findAll().list()
@@ -116,8 +117,8 @@ class EmbeddingServiceIntegrationTest {
         val result = embeddingService.embedRunbook(fragmentId)
 
         // Assert
-        assertTrue(result is EmbeddingResult.Success)
-        assertEquals(1, (result as EmbeddingResult.Success).count)
+        assertTrue(result is Either.Right)
+        assertEquals(1, (result as Either.Right).value)
 
         // Verify embedding persisted
         val embeddings = runbookEmbeddingRepository.findAll().list()
@@ -151,7 +152,7 @@ class EmbeddingServiceIntegrationTest {
         val result = embeddingService.embedIncident(incidentId)
 
         // Assert
-        assertTrue(result is EmbeddingResult.Success)
+        assertTrue(result is Either.Right)
 
         val embedding = incidentEmbeddingRepository.findAll().firstResult()
         assertNotNull(embedding)
@@ -247,8 +248,8 @@ class EmbeddingServiceIntegrationTest {
         var successCount = 0
         incidentIds.forEach { id ->
             val result = embeddingService.embedIncident(id)
-            if (result is EmbeddingResult.Success) {
-                successCount += result.count
+            if (result is Either.Right) {
+                successCount += result.value
             }
         }
 
@@ -287,8 +288,8 @@ class EmbeddingServiceIntegrationTest {
         var successCount = 0
         fragmentIds.forEach { id ->
             val result = embeddingService.embedRunbook(id)
-            if (result is EmbeddingResult.Success) {
-                successCount += result.count
+            if (result is Either.Right) {
+                successCount += result.value
             }
         }
 
@@ -334,8 +335,8 @@ class EmbeddingServiceIntegrationTest {
         )
 
         // Assert
-        assertTrue(result is EmbeddingResult.Success)
-        assertEquals(2, (result as EmbeddingResult.Success).count)
+        assertTrue(result is Either.Right)
+        assertEquals(2, (result as Either.Right).value)
         assertEquals(1, incidentEmbeddingRepository.count())
         assertEquals(1, runbookEmbeddingRepository.count())
     }
@@ -347,8 +348,8 @@ class EmbeddingServiceIntegrationTest {
         val result = embeddingService.embedIncident(IncidentId(999L))
 
         // Assert
-        assertTrue(result is EmbeddingResult.Failure)
-        assertTrue((result as EmbeddingResult.Failure).error is EmbeddingError.Unexpected)
+        assertTrue(result is Either.Left)
+        assertTrue((result as Either.Left).value is EmbeddingError.Unexpected)
     }
 
     @Test
@@ -358,8 +359,8 @@ class EmbeddingServiceIntegrationTest {
         val result = embeddingService.embedRunbook(RunbookFragmentId(999L))
 
         // Assert
-        assertTrue(result is EmbeddingResult.Failure)
-        assertTrue((result as EmbeddingResult.Failure).error is EmbeddingError.Unexpected)
+        assertTrue(result is Either.Left)
+        assertTrue((result as Either.Left).value is EmbeddingError.Unexpected)
     }
 
     @Test

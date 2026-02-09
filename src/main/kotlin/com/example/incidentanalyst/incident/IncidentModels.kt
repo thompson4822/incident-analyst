@@ -20,11 +20,6 @@ sealed interface IncidentError {
     data object NotFound : IncidentError
 }
 
-sealed interface IncidentResult {
-    data class Success(val incident: Incident) : IncidentResult
-    data class Failure(val error: IncidentError) : IncidentResult
-}
-
 data class Incident(
     val id: IncidentId,
     val source: String,

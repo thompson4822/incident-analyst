@@ -1,5 +1,6 @@
 package com.example.incidentanalyst.diagnosis
 
+import com.example.incidentanalyst.common.Either
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.transaction.Transactional
 
@@ -14,15 +15,15 @@ class DiagnosisService(
     fun getByIncidentId(incidentId: Long): Diagnosis? =
         diagnosisRepository.findByIncidentId(incidentId)?.toDomain()
 
-    fun getById(id: DiagnosisId): DiagnosisResult =
+    fun getById(id: DiagnosisId): Either<DiagnosisError, Diagnosis> =
         diagnosisRepository.findById(id.value)?.toDomain()?.let { diagnosis ->
-            DiagnosisResult.Success(diagnosis)
-        } ?: DiagnosisResult.Failure(DiagnosisError.NotFound)
+            Either.Right(diagnosis)
+        } ?: Either.Left(DiagnosisError.NotFound)
 
     @Transactional
-    fun updateVerification(id: DiagnosisId, verification: DiagnosisVerification): DiagnosisResult {
+    fun updateVerification(id: DiagnosisId, verification: DiagnosisVerification): Either<DiagnosisError, Diagnosis> {
         val entity = diagnosisRepository.findById(id.value) 
-            ?: return DiagnosisResult.Failure(DiagnosisError.NotFound)
+            ?: return Either.Left(DiagnosisError.NotFound)
         
         entity.verification = when (verification) {
             DiagnosisVerification.VerifiedByHuman -> "VERIFIED"
@@ -30,6 +31,6 @@ class DiagnosisService(
         }
         
         // Transaction will auto-commit, entity is managed
-        return DiagnosisResult.Success(entity.toDomain())
+        return Either.Right(entity.toDomain())
     }
 }

@@ -30,29 +30,29 @@
     <!-- Filter Bar -->
     <div class="card bg-white/90 border border-slate-200 shadow-sm">
       <div class="card-body p-4">
-        <div class="flex flex-wrap items-center justify-between gap-4">
+        <form hx-get="/incidents" hx-target="main" hx-select="main" hx-swap="outerHTML" hx-trigger="change, keyup delay:500ms changed" class="flex flex-wrap items-center justify-between gap-4">
           <div class="flex flex-wrap items-center gap-2">
             <div class="join border border-slate-200">
-              <button class="btn btn-sm join-item bg-white border-none text-slate-700 hover:bg-slate-50">All</button>
-              <button class="btn btn-sm join-item bg-white border-none text-slate-700 hover:bg-slate-50">Open</button>
-              <button class="btn btn-sm join-item bg-white border-none text-slate-700 hover:bg-slate-50">Acknowledged</button>
-              <button class="btn btn-sm join-item bg-white border-none text-slate-700 hover:bg-slate-50">Resolved</button>
+              <input type="radio" name="status" value="All" aria-label="All" class="btn btn-sm join-item bg-white border-none text-slate-700 hover:bg-slate-50" {#if model.filters.status == "All" || !model.filters.status}checked{/if} />
+              <input type="radio" name="status" value="Open" aria-label="Open" class="btn btn-sm join-item bg-white border-none text-slate-700 hover:bg-slate-50" {#if model.filters.status == "Open"}checked{/if} />
+              <input type="radio" name="status" value="Acknowledged" aria-label="Acknowledged" class="btn btn-sm join-item bg-white border-none text-slate-700 hover:bg-slate-50" {#if model.filters.status == "Acknowledged"}checked{/if} />
+              <input type="radio" name="status" value="Resolved" aria-label="Resolved" class="btn btn-sm join-item bg-white border-none text-slate-700 hover:bg-slate-50" {#if model.filters.status == "Resolved"}checked{/if} />
             </div>
             
             <div class="divider divider-horizontal mx-0"></div>
             
-            <select class="select select-sm select-bordered border-slate-200 bg-white text-slate-700">
-              <option disabled selected>Severity</option>
-              <option>Critical</option>
-              <option>High</option>
-              <option>Medium</option>
-              <option>Low</option>
+            <select name="severity" class="select select-sm select-bordered border-slate-200 bg-white text-slate-700">
+              <option value="Severity" {#if !model.filters.severity || model.filters.severity == "Severity"}selected{/if}>Severity</option>
+              <option value="Critical" {#if model.filters.severity == "Critical"}selected{/if}>Critical</option>
+              <option value="High" {#if model.filters.severity == "High"}selected{/if}>High</option>
+              <option value="Medium" {#if model.filters.severity == "Medium"}selected{/if}>Medium</option>
+              <option value="Low" {#if model.filters.severity == "Low"}selected{/if}>Low</option>
             </select>
 
-            <select class="select select-sm select-bordered border-slate-200 bg-white text-slate-700">
-              <option disabled selected>Source</option>
-              <option>CloudWatch</option>
-              <option>Manual</option>
+            <select name="source" class="select select-sm select-bordered border-slate-200 bg-white text-slate-700">
+              <option value="Source" {#if !model.filters.source || model.filters.source == "Source"}selected{/if}>Source</option>
+              <option value="CloudWatch" {#if model.filters.source == "CloudWatch"}selected{/if}>CloudWatch</option>
+              <option value="Manual" {#if model.filters.source == "Manual"}selected{/if}>Manual</option>
             </select>
           </div>
 
@@ -61,15 +61,15 @@
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
                 <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
               </svg>
-              <input type="text" placeholder="Search incidents..." class="input input-sm input-bordered border-slate-200 bg-white pl-9 w-64 focus:border-teal-500" />
+              <input type="text" name="q" value="{model.filters.query ?: ''}" placeholder="Search incidents..." class="input input-sm input-bordered border-slate-200 bg-white pl-9 w-64 focus:border-teal-500" />
             </div>
-            <button class="btn btn-sm btn-ghost btn-square text-slate-500">
+            <button type="button" class="btn btn-sm btn-ghost btn-square text-slate-500" onclick="this.form.reset(); this.form.dispatchEvent(new Event('change'))">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
               </svg>
             </button>
           </div>
-        </div>
+        </form>
       </div>
     </div>
 

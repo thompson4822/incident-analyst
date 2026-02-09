@@ -1,5 +1,6 @@
 package com.example.incidentanalyst.diagnosis
 
+import com.example.incidentanalyst.common.Either
 import io.quarkus.test.InjectMock
 import io.quarkus.test.junit.QuarkusTest
 import jakarta.inject.Inject
@@ -156,8 +157,8 @@ class DiagnosisServiceTest {
         val result = diagnosisService.getById(DiagnosisId(testId))
 
         // Assert
-        assertTrue(result is DiagnosisResult.Success)
-        val diagnosis = (result as DiagnosisResult.Success).diagnosis
+        assertTrue(result is Either.Right)
+        val diagnosis = (result as Either.Right).value
         assertEquals(testId, diagnosis.id.value)
         assertEquals("Root cause: CPU spike", diagnosis.rootCause)
         assertEquals(Confidence.HIGH, diagnosis.confidence)
@@ -174,8 +175,8 @@ class DiagnosisServiceTest {
         val result = diagnosisService.getById(DiagnosisId(testId))
 
         // Assert
-        assertTrue(result is DiagnosisResult.Failure)
-        val error = (result as DiagnosisResult.Failure).error
+        assertTrue(result is Either.Left)
+        val error = (result as Either.Left).value
         assertTrue(error is DiagnosisError.NotFound)
     }
 
@@ -210,8 +211,8 @@ class DiagnosisServiceTest {
         val result = diagnosisService.getById(DiagnosisId(testId))
 
         // Assert
-        assertTrue(result is DiagnosisResult.Success)
-        val diagnosis = (result as DiagnosisResult.Success).diagnosis
+        assertTrue(result is Either.Right)
+        val diagnosis = (result as Either.Right).value
         assertEquals(3, diagnosis.steps.size)
         assertEquals("Step 1", diagnosis.steps[0])
         assertEquals("Step 2", diagnosis.steps[1])
@@ -249,13 +250,13 @@ class DiagnosisServiceTest {
         val result = diagnosisService.getById(DiagnosisId(testId))
 
         // Assert
-        assertTrue(result is DiagnosisResult.Success)
-        val diagnosis = (result as DiagnosisResult.Success).diagnosis
+        assertTrue(result is Either.Right)
+        val diagnosis = (result as Either.Right).value
         assertTrue(diagnosis.verification is DiagnosisVerification.Unverified)
     }
 
     @Test
-    fun `DiagnosisResult Success pattern matching works correctly`() {
+    fun `Either Success pattern matching works correctly`() {
         // Arrange
         val testId = 111L
         val baseTime = Instant.now()
@@ -286,19 +287,19 @@ class DiagnosisServiceTest {
 
         // Assert
         when (result) {
-            is DiagnosisResult.Success -> {
-                val diagnosis = result.diagnosis
+            is Either.Right -> {
+                val diagnosis = result.value
                 assertEquals("Test root cause", diagnosis.rootCause)
                 assertNotNull(diagnosis.id)
             }
-            is DiagnosisResult.Failure -> {
-                org.junit.jupiter.api.Assertions.fail<Any>("Expected Success but got Failure")
+            is Either.Left -> {
+                org.junit.jupiter.api.Assertions.fail<Any>("Expected Right but got Left")
             }
         }
     }
 
     @Test
-    fun `DiagnosisResult Failure pattern matching works correctly`() {
+    fun `Either Left pattern matching works correctly`() {
         // Arrange
         val testId = 222L
         `when`(diagnosisRepository.findById(testId)).thenReturn(null)
@@ -308,11 +309,11 @@ class DiagnosisServiceTest {
 
         // Assert
         when (result) {
-            is DiagnosisResult.Success -> {
-                org.junit.jupiter.api.Assertions.fail<Any>("Expected Failure but got Success")
+            is Either.Right -> {
+                org.junit.jupiter.api.Assertions.fail<Any>("Expected Left but got Right")
             }
-            is DiagnosisResult.Failure -> {
-                assertTrue(result.error is DiagnosisError.NotFound)
+            is Either.Left -> {
+                assertTrue(result.value is DiagnosisError.NotFound)
             }
         }
     }

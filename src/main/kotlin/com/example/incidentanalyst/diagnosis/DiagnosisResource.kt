@@ -32,10 +32,10 @@ class DiagnosisResource(
         }
         
         val diagnosisId = DiagnosisId(id)
-        return when (val result = diagnosisService.getById(diagnosisId)) {
-            is DiagnosisResult.Success -> Response.ok(result.diagnosis.toResponseDto()).build()
-            is DiagnosisResult.Failure -> Response.status(Response.Status.NOT_FOUND).build()
-        }
+        return diagnosisService.getById(diagnosisId).fold(
+            ifLeft = { Response.status(Response.Status.NOT_FOUND).build() },
+            ifRight = { diagnosis -> Response.ok(diagnosis.toResponseDto()).build() }
+        )
     }
 
     @PUT
@@ -61,13 +61,15 @@ class DiagnosisResource(
             DiagnosisVerification.Unverified
         }
         
-        return when (val result = diagnosisService.updateVerification(diagnosisId, verification)) {
-            is DiagnosisResult.Success -> Response.ok(result.diagnosis.toResponseDto()).build()
-            is DiagnosisResult.Failure -> when (result.error) {
-                is DiagnosisError.NotFound -> Response.status(Response.Status.NOT_FOUND).build()
-                is DiagnosisError.UpdateFailed -> Response.serverError().build()
-                else -> Response.serverError().build()
-            }
-        }
+        return diagnosisService.updateVerification(diagnosisId, verification).fold(
+            ifLeft = { error ->
+                when (error) {
+                    is DiagnosisError.NotFound -> Response.status(Response.Status.NOT_FOUND).build()
+                    is DiagnosisError.UpdateFailed -> Response.serverError().build()
+                    else -> Response.serverError().build()
+                }
+            },
+            ifRight = { diagnosis -> Response.ok(diagnosis.toResponseDto()).build() }
+        )
     }
 }

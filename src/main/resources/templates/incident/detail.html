@@ -142,7 +142,11 @@
                 
                 <div class="card-actions justify-end mt-6 gap-2">
                   <button class="btn btn-xs btn-ghost text-slate-500">Provide Feedback</button>
-                  <button class="btn btn-sm btn-outline border-teal-600 text-teal-600 hover:bg-teal-50">Apply All Steps</button>
+                  <button class="btn btn-sm btn-outline border-teal-600 text-teal-600 hover:bg-teal-50"
+                          hx-post="/incidents/{incident.id}/remediate"
+                          hx-target="main"
+                          hx-select="main"
+                          hx-swap="outerHTML">Apply All Steps</button>
                 </div>
               </div>
             </div>
@@ -154,7 +158,11 @@
               <h3 class="font-bold">No AI Diagnosis Available</h3>
               <div class="text-xs text-amber-700">The system is still gathering context for this incident.</div>
             </div>
-            <button class="btn btn-sm bg-amber-600 hover:bg-amber-700 border-none text-white">Request Diagnosis</button>
+            <button class="btn btn-sm bg-amber-600 hover:bg-amber-700 border-none text-white"
+                    hx-post="/incidents/{incident.id}/diagnose"
+                    hx-target="main"
+                    hx-select="main"
+                    hx-swap="outerHTML">Request Diagnosis</button>
           </div>
         {/if}
 

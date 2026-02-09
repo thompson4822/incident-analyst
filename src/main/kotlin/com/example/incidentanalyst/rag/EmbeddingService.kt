@@ -1,5 +1,6 @@
 package com.example.incidentanalyst.rag
 
+import com.example.incidentanalyst.common.Either
 import com.example.incidentanalyst.incident.IncidentId
 import com.example.incidentanalyst.incident.IncidentRepository
 import com.example.incidentanalyst.runbook.RunbookFragmentId
@@ -21,12 +22,12 @@ class EmbeddingService(
 ) {
 
     @Transactional
-    fun embedIncident(incidentId: IncidentId): EmbeddingResult {
+    fun embedIncident(incidentId: IncidentId): Either<EmbeddingError, Int> {
         val incident = incidentRepository.findById(incidentId.value)
-            ?: return EmbeddingResult.Failure(EmbeddingError.Unexpected)
+            ?: return Either.Left(EmbeddingError.Unexpected)
 
         if (incident.title.isBlank() && incident.description.isBlank()) {
-            return EmbeddingResult.Failure(EmbeddingError.InvalidText)
+            return Either.Left(EmbeddingError.InvalidText)
         }
 
         val text = buildString {
@@ -45,23 +46,23 @@ class EmbeddingService(
             )
 
             incidentEmbeddingRepository.persist(entity)
-            EmbeddingResult.Success(1)
+            Either.Right(1)
         } catch (e: ConstraintViolationException) {
-            EmbeddingResult.Failure(
+            Either.Left(
                 EmbeddingError.PersistenceError(e.message ?: "Constraint violation")
             )
         } catch (e: Exception) {
-            EmbeddingResult.Failure(EmbeddingError.EmbeddingFailed)
+            Either.Left(EmbeddingError.EmbeddingFailed)
         }
     }
 
     @Transactional
-    fun embedRunbook(fragmentId: RunbookFragmentId): EmbeddingResult {
+    fun embedRunbook(fragmentId: RunbookFragmentId): Either<EmbeddingError, Int> {
         val fragment = runbookFragmentRepository.findById(fragmentId.value)
-            ?: return EmbeddingResult.Failure(EmbeddingError.Unexpected)
+            ?: return Either.Left(EmbeddingError.Unexpected)
 
         if (fragment.title.isBlank() && fragment.content.isBlank()) {
-            return EmbeddingResult.Failure(EmbeddingError.InvalidText)
+            return Either.Left(EmbeddingError.InvalidText)
         }
 
         val text = buildString {
@@ -80,13 +81,13 @@ class EmbeddingService(
             )
 
             runbookEmbeddingRepository.persist(entity)
-            EmbeddingResult.Success(1)
+            Either.Right(1)
         } catch (e: ConstraintViolationException) {
-            EmbeddingResult.Failure(
+            Either.Left(
                 EmbeddingError.PersistenceError(e.message ?: "Constraint violation")
             )
         } catch (e: Exception) {
-            EmbeddingResult.Failure(EmbeddingError.EmbeddingFailed)
+            Either.Left(EmbeddingError.EmbeddingFailed)
         }
     }
 
@@ -94,32 +95,32 @@ class EmbeddingService(
     fun embedBatch(
         incidentIds: List<IncidentId>,
         fragmentIds: List<RunbookFragmentId>
-    ): EmbeddingResult {
+    ): Either<EmbeddingError, Int> {
         var count = 0
 
         incidentIds.forEach { id ->
-            when (val result = embedIncident(id)) {
-                is EmbeddingResult.Success -> count += result.count
-                is EmbeddingResult.Failure -> {
-                    if (result.error !is EmbeddingError.Unexpected) {
-                        return result
+            embedIncident(id).fold(
+                ifLeft = { error ->
+                    if (error !is EmbeddingError.Unexpected) {
+                        return Either.Left(error)
                     }
-                }
-            }
+                },
+                ifRight = { count += it }
+            )
         }
 
         fragmentIds.forEach { id ->
-            when (val result = embedRunbook(id)) {
-                is EmbeddingResult.Success -> count += result.count
-                is EmbeddingResult.Failure -> {
-                    if (result.error !is EmbeddingError.Unexpected) {
-                        return result
+            embedRunbook(id).fold(
+                ifLeft = { error ->
+                    if (error !is EmbeddingError.Unexpected) {
+                        return Either.Left(error)
                     }
-                }
-            }
+                },
+                ifRight = { count += it }
+            )
         }
 
-        return EmbeddingResult.Success(count)
+        return Either.Right(count)
     }
 }
 

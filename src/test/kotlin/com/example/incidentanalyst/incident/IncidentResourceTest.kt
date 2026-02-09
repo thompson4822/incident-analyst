@@ -1,5 +1,6 @@
 package com.example.incidentanalyst.incident
 
+import com.example.incidentanalyst.common.Either
 import io.quarkus.test.InjectMock
 import io.quarkus.test.junit.QuarkusTest
 import io.restassured.RestAssured.given
@@ -43,10 +44,11 @@ class IncidentResourceTest {
             updatedAt = testTimestamp
         )
         `when`(incidentService.getById(IncidentId(testId)))
-            .thenReturn(IncidentResult.Success(incident))
+            .thenReturn(Either.Right(incident))
 
         // Act & Assert
         given()
+            .accept(ContentType.JSON)
             .contentType(ContentType.JSON)
             .`when`()
             .get("/incidents/$testId")
@@ -65,10 +67,11 @@ class IncidentResourceTest {
         // Arrange
         val testId = 999L
         `when`(incidentService.getById(IncidentId(testId)))
-            .thenReturn(IncidentResult.Failure(IncidentError.NotFound))
+            .thenReturn(Either.Left(IncidentError.NotFound))
 
         // Act & Assert
         given()
+            .accept(ContentType.JSON)
             .contentType(ContentType.JSON)
             .`when`()
             .get("/incidents/$testId")
@@ -80,6 +83,7 @@ class IncidentResourceTest {
     fun `GET by id returns 400 for invalid negative ID`() {
         // Act & Assert
         given()
+            .accept(ContentType.JSON)
             .contentType(ContentType.JSON)
             .`when`()
             .get("/incidents/-1")
@@ -92,6 +96,7 @@ class IncidentResourceTest {
     fun `GET by id returns 400 for invalid zero ID`() {
         // Act & Assert
         given()
+            .accept(ContentType.JSON)
             .contentType(ContentType.JSON)
             .`when`()
             .get("/incidents/0")
@@ -104,6 +109,7 @@ class IncidentResourceTest {
     fun `GET by id returns 400 with appropriate error message for negative ID`() {
         // Act & Assert
         given()
+            .accept(ContentType.JSON)
             .contentType(ContentType.JSON)
             .`when`()
             .get("/incidents/-5")
@@ -129,10 +135,11 @@ class IncidentResourceTest {
             updatedAt = testTimestamp
         )
         `when`(incidentService.getById(IncidentId(testId)))
-            .thenReturn(IncidentResult.Success(incident))
+            .thenReturn(Either.Right(incident))
 
         // Act & Assert
         given()
+            .accept(ContentType.JSON)
             .contentType(ContentType.JSON)
             .`when`()
             .get("/incidents/$testId")
@@ -160,10 +167,11 @@ class IncidentResourceTest {
             updatedAt = testTimestamp
         )
         `when`(incidentService.getById(IncidentId(testId)))
-            .thenReturn(IncidentResult.Success(incident))
+            .thenReturn(Either.Right(incident))
 
         // Act & Assert
         given()
+            .accept(ContentType.JSON)
             .contentType(ContentType.JSON)
             .`when`()
             .get("/incidents/$testId")
@@ -188,10 +196,11 @@ class IncidentResourceTest {
             updatedAt = testTimestamp
         )
         `when`(incidentService.getById(IncidentId(testId)))
-            .thenReturn(IncidentResult.Success(incident))
+            .thenReturn(Either.Right(incident))
 
         // Act & Assert
         given()
+            .accept(ContentType.JSON)
             .contentType(ContentType.JSON)
             .`when`()
             .get("/incidents/$testId")
@@ -216,10 +225,11 @@ class IncidentResourceTest {
             updatedAt = testTimestamp
         )
         `when`(incidentService.getById(IncidentId(testId)))
-            .thenReturn(IncidentResult.Success(incident))
+            .thenReturn(Either.Right(incident))
 
         // Act & Assert
         given()
+            .accept(ContentType.JSON)
             .contentType(ContentType.JSON)
             .`when`()
             .get("/incidents/$testId")
@@ -250,10 +260,11 @@ class IncidentResourceTest {
             updatedAt = testTimestamp
         )
         `when`(incidentService.getById(IncidentId(testId)))
-            .thenReturn(IncidentResult.Success(incident))
+            .thenReturn(Either.Right(incident))
 
         // Act & Assert
         given()
+            .accept(ContentType.JSON)
             .contentType(ContentType.JSON)
             .`when`()
             .get("/incidents/$testId")
@@ -280,10 +291,11 @@ class IncidentResourceTest {
                 updatedAt = testTimestamp
             )
             `when`(incidentService.getById(IncidentId(testId)))
-                .thenReturn(IncidentResult.Success(incident))
+                .thenReturn(Either.Right(incident))
 
             // Act & Assert
             given()
+                .accept(ContentType.JSON)
                 .contentType(ContentType.JSON)
                 .`when`()
                 .get("/incidents/$testId")
@@ -310,10 +322,11 @@ class IncidentResourceTest {
             updatedAt = testTimestamp
         )
         `when`(incidentService.getById(IncidentId(testId)))
-            .thenReturn(IncidentResult.Success(incident))
+            .thenReturn(Either.Right(incident))
 
         // Act & Assert
         given()
+            .accept(ContentType.JSON)
             .contentType(ContentType.JSON)
             .`when`()
             .get("/incidents/$testId")
@@ -326,6 +339,7 @@ class IncidentResourceTest {
     fun `GET by id returns 400 for very large negative ID`() {
         // Act & Assert
         given()
+            .accept(ContentType.JSON)
             .contentType(ContentType.JSON)
             .`when`()
             .get("/incidents/-999999999999")
@@ -337,6 +351,7 @@ class IncidentResourceTest {
     fun `GET by id returns 400 for ID at boundary Long Min`() {
         // Act & Assert - This should validate and reject even at boundary
         given()
+            .accept(ContentType.JSON)
             .contentType(ContentType.JSON)
             .`when`()
             .get("/incidents/-9223372036854775808")

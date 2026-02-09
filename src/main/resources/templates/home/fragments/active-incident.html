@@ -70,9 +70,12 @@
           View Details
         </a>
         {#if !activeIncident.hasDiagnosis}
-          <a href="/diagnoses?incidentId={activeIncident.id}" class="btn btn-sm btn-outline border-teal-600 text-teal-600 hover:bg-teal-50">
+          <button hx-post="/incidents/{activeIncident.id}/diagnose"
+                  hx-target="#active-incident-container"
+                  hx-swap="innerHTML"
+                  class="btn btn-sm btn-outline border-teal-600 text-teal-600 hover:bg-teal-50">
             Diagnose
-          </a>
+          </button>
         {/if}
       </div>
     </div>

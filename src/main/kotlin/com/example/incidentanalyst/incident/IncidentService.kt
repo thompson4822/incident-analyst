@@ -1,5 +1,6 @@
 package com.example.incidentanalyst.incident
 
+import com.example.incidentanalyst.common.Either
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.transaction.Transactional
 import java.time.Instant
@@ -12,10 +13,19 @@ class IncidentService(
     fun listRecent(limit: Int = 50): List<Incident> =
         incidentRepository.findRecent(limit).map { it.toDomain() }
 
-    fun getById(id: IncidentId): IncidentResult =
+    fun search(
+        query: String?,
+        status: String?,
+        severity: String?,
+        source: String?,
+        limit: Int = 50
+    ): List<Incident> =
+        incidentRepository.findByFilters(query, status, severity, source, limit).map { it.toDomain() }
+
+    fun getById(id: IncidentId): Either<IncidentError, Incident> =
         incidentRepository.findById(id.value)?.toDomain()?.let { incident ->
-            IncidentResult.Success(incident)
-        } ?: IncidentResult.Failure(IncidentError.NotFound)
+            Either.Right(incident)
+        } ?: Either.Left(IncidentError.NotFound)
 
     @Transactional
     fun create(incident: Incident): Incident {
@@ -25,8 +35,8 @@ class IncidentService(
     }
 
     @Transactional
-    fun updateStatus(id: IncidentId, status: IncidentStatus): IncidentResult {
-        val entity = incidentRepository.findById(id.value) ?: return IncidentResult.Failure(IncidentError.NotFound)
+    fun updateStatus(id: IncidentId, status: IncidentStatus): Either<IncidentError, Incident> {
+        val entity = incidentRepository.findById(id.value) ?: return Either.Left(IncidentError.NotFound)
         entity.status = when (status) {
             IncidentStatus.Open -> "OPEN"
             IncidentStatus.Acknowledged -> "ACK"
@@ -34,6 +44,6 @@ class IncidentService(
             is IncidentStatus.Diagnosed -> "DIAGNOSED:${status.diagnosisId}"
         }
         entity.updatedAt = Instant.now()
-        return IncidentResult.Success(entity.toDomain())
+        return Either.Right(entity.toDomain())
     }
 }

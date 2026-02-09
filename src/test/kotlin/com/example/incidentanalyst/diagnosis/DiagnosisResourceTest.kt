@@ -1,5 +1,6 @@
 package com.example.incidentanalyst.diagnosis
 
+import com.example.incidentanalyst.common.Either
 import io.quarkus.test.InjectMock
 import io.quarkus.test.junit.QuarkusTest
 import io.restassured.RestAssured.given
@@ -98,7 +99,7 @@ class DiagnosisResourceTest {
             createdAt = baseTime
         )
         `when`(diagnosisServiceMock.getById(DiagnosisId(testId)))
-            .thenReturn(DiagnosisResult.Success(diagnosis))
+            .thenReturn(Either.Right(diagnosis))
 
         // Act & Assert
         given()
@@ -123,7 +124,7 @@ class DiagnosisResourceTest {
         // Arrange
         val testId = 999L
         `when`(diagnosisServiceMock.getById(DiagnosisId(testId)))
-            .thenReturn(DiagnosisResult.Failure(DiagnosisError.NotFound))
+            .thenReturn(Either.Left(DiagnosisError.NotFound))
 
         // Act & Assert
         given()
@@ -185,7 +186,7 @@ class DiagnosisResourceTest {
             createdAt = baseTime
         )
         `when`(diagnosisServiceMock.getById(DiagnosisId(testId)))
-            .thenReturn(DiagnosisResult.Success(diagnosis))
+            .thenReturn(Either.Right(diagnosis))
 
         // Act & Assert
         given()
@@ -214,7 +215,7 @@ class DiagnosisResourceTest {
                 createdAt = baseTime
             )
             `when`(diagnosisServiceMock.getById(DiagnosisId(testId)))
-                .thenReturn(DiagnosisResult.Success(diagnosis))
+                .thenReturn(Either.Right(diagnosis))
 
             // Act & Assert
             given()
@@ -242,7 +243,7 @@ class DiagnosisResourceTest {
             createdAt = baseTime
         )
         `when`(diagnosisServiceMock.updateVerification(DiagnosisId(testId), DiagnosisVerification.VerifiedByHuman))
-            .thenReturn(DiagnosisResult.Success(diagnosis))
+            .thenReturn(Either.Right(diagnosis))
 
         // Act & Assert
         given()
@@ -261,7 +262,7 @@ class DiagnosisResourceTest {
         // Arrange
         val testId = 999L
         `when`(diagnosisServiceMock.updateVerification(DiagnosisId(testId), DiagnosisVerification.VerifiedByHuman))
-            .thenReturn(DiagnosisResult.Failure(DiagnosisError.NotFound))
+            .thenReturn(Either.Left(DiagnosisError.NotFound))
 
         // Act & Assert
         given()
@@ -301,7 +302,7 @@ class DiagnosisResourceTest {
             createdAt = baseTime
         )
         `when`(diagnosisServiceMock.updateVerification(DiagnosisId(testId), DiagnosisVerification.VerifiedByHuman))
-            .thenReturn(DiagnosisResult.Success(diagnosis))
+            .thenReturn(Either.Right(diagnosis))
 
         // Act & Assert
         given()
@@ -329,7 +330,7 @@ class DiagnosisResourceTest {
             createdAt = baseTime
         )
         `when`(diagnosisServiceMock.updateVerification(DiagnosisId(testId), DiagnosisVerification.Unverified))
-            .thenReturn(DiagnosisResult.Success(diagnosis))
+            .thenReturn(Either.Right(diagnosis))
 
         // Act & Assert
         given()
@@ -347,7 +348,7 @@ class DiagnosisResourceTest {
         // Arrange
         val testId = 555L
         `when`(diagnosisServiceMock.updateVerification(DiagnosisId(testId), DiagnosisVerification.VerifiedByHuman))
-            .thenReturn(DiagnosisResult.Failure(DiagnosisError.UpdateFailed))
+            .thenReturn(Either.Left(DiagnosisError.UpdateFailed))
 
         // Act & Assert
         given()
@@ -387,7 +388,7 @@ class DiagnosisResourceTest {
             createdAt = baseTime
         )
         `when`(diagnosisServiceMock.getById(DiagnosisId(testId)))
-            .thenReturn(DiagnosisResult.Success(diagnosis))
+            .thenReturn(Either.Right(diagnosis))
 
         // Act & Assert
         given()
@@ -414,7 +415,7 @@ class DiagnosisResourceTest {
             createdAt = baseTime
         )
         `when`(diagnosisServiceMock.getById(DiagnosisId(testId)))
-            .thenReturn(DiagnosisResult.Success(diagnosis))
+            .thenReturn(Either.Right(diagnosis))
 
         // Act & Assert
         given()
@@ -441,7 +442,7 @@ class DiagnosisResourceTest {
             createdAt = baseTime
         )
         `when`(diagnosisServiceMock.getById(DiagnosisId(testId)))
-            .thenReturn(DiagnosisResult.Success(diagnosis))
+            .thenReturn(Either.Right(diagnosis))
 
         // Act & Assert
         given()
@@ -471,7 +472,7 @@ class DiagnosisResourceTest {
             createdAt = baseTime
         )
         `when`(diagnosisServiceMock.getById(DiagnosisId(testId)))
-            .thenReturn(DiagnosisResult.Success(diagnosis))
+            .thenReturn(Either.Right(diagnosis))
 
         // Act & Assert
         given()
@@ -498,7 +499,7 @@ class DiagnosisResourceTest {
             createdAt = baseTime
         )
         `when`(diagnosisServiceMock.getById(DiagnosisId(testId)))
-            .thenReturn(DiagnosisResult.Success(diagnosis))
+            .thenReturn(Either.Right(diagnosis))
 
         // Act & Assert
         given()

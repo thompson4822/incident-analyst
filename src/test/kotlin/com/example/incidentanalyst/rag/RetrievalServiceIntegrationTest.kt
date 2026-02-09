@@ -1,5 +1,6 @@
 package com.example.incidentanalyst.rag
 
+import com.example.incidentanalyst.common.Either
 import com.example.incidentanalyst.incident.Incident
 import com.example.incidentanalyst.incident.IncidentEntity
 import com.example.incidentanalyst.incident.IncidentId
@@ -129,8 +130,8 @@ class RetrievalServiceIntegrationTest {
         val result = retrievalService.retrieve(queryIncident)
 
         // Assert
-        assertTrue(result is RetrievalResult.Success)
-        val context = (result as RetrievalResult.Success).context
+        assertTrue(result is Either.Right)
+        val context = (result as Either.Right).value
         assertTrue(context.similarIncidents.isNotEmpty())
         assertTrue(context.similarIncidents.size <= 5) // Top-K limit of 5
 
@@ -193,8 +194,8 @@ class RetrievalServiceIntegrationTest {
         val result = retrievalService.retrieveForRunbook(queryFragment)
 
         // Assert
-        assertTrue(result is RetrievalResult.Success)
-        val context = (result as RetrievalResult.Success).context
+        assertTrue(result is Either.Right)
+        val context = (result as Either.Right).value
         assertTrue(context.similarRunbooks.isNotEmpty())
         assertTrue(context.similarRunbooks.size <= 2) // Top-K limit of 2
 
@@ -266,8 +267,8 @@ class RetrievalServiceIntegrationTest {
         val result = retrievalService.retrieve(queryIncident)
 
         // Assert - Results should be ordered by similarity (highest first)
-        assertTrue(result is RetrievalResult.Success)
-        val context = (result as RetrievalResult.Success).context
+        assertTrue(result is Either.Right)
+        val context = (result as Either.Right).value
 
         if (context.similarIncidents.size >= 2) {
             var previousScore = 1.0
@@ -316,8 +317,8 @@ class RetrievalServiceIntegrationTest {
         val result = retrievalService.retrieve(queryIncident)
 
         // Assert - All results should have score >= 0.7
-        assertTrue(result is RetrievalResult.Success)
-        val context = (result as RetrievalResult.Success).context
+        assertTrue(result is Either.Right)
+        val context = (result as Either.Right).value
 
         context.similarIncidents.forEach { match ->
             assertTrue(
@@ -375,8 +376,8 @@ class RetrievalServiceIntegrationTest {
         val result = retrievalService.retrieve(queryIncident)
 
         // Assert
-        assertTrue(result is RetrievalResult.Success)
-        val context = (result as RetrievalResult.Success).context
+        assertTrue(result is Either.Right)
+        val context = (result as Either.Right).value
 
         // Verify context has both types of results
         assertNotNull(context.similarIncidents)
@@ -433,8 +434,8 @@ class RetrievalServiceIntegrationTest {
         val result = retrievalService.retrieve(queryIncident)
 
         // Assert
-        assertTrue(result is RetrievalResult.Success)
-        val context = (result as RetrievalResult.Success).context
+        assertTrue(result is Either.Right)
+        val context = (result as Either.Right).value
 
         context.similarIncidents.forEach { match ->
             assertTrue(match.id is IncidentId)
@@ -467,8 +468,8 @@ class RetrievalServiceIntegrationTest {
         val result = retrievalService.retrieve(queryIncident)
 
         // Assert
-        assertTrue(result is RetrievalResult.Success)
-        val context = (result as RetrievalResult.Success).context
+        assertTrue(result is Either.Right)
+        val context = (result as Either.Right).value
         assertEquals(0, context.similarIncidents.size)
         assertEquals(0, context.similarRunbooks.size)
     }
@@ -490,8 +491,8 @@ class RetrievalServiceIntegrationTest {
         val result = retrievalService.retrieveForRunbook(queryFragment)
 
         // Assert
-        assertTrue(result is RetrievalResult.Success)
-        val context = (result as RetrievalResult.Success).context
+        assertTrue(result is Either.Right)
+        val context = (result as Either.Right).value
         assertEquals(0, context.similarIncidents.size)
         assertEquals(0, context.similarRunbooks.size)
     }
@@ -515,8 +516,8 @@ class RetrievalServiceIntegrationTest {
         val result = retrievalService.retrieve(invalidIncident)
 
         // Assert
-        assertTrue(result is RetrievalResult.Failure)
-        assertTrue((result as RetrievalResult.Failure).error is RetrievalError.InvalidQuery)
+        assertTrue(result is Either.Left)
+        assertTrue((result as Either.Left).value is RetrievalError.InvalidQuery)
     }
 
     @Test
@@ -535,8 +536,8 @@ class RetrievalServiceIntegrationTest {
         val result = retrievalService.retrieveForRunbook(invalidFragment)
 
         // Assert
-        assertTrue(result is RetrievalResult.Failure)
-        assertTrue((result as RetrievalResult.Failure).error is RetrievalError.InvalidQuery)
+        assertTrue(result is Either.Left)
+        assertTrue((result as Either.Left).value is RetrievalError.InvalidQuery)
     }
 
     @Test
@@ -574,8 +575,8 @@ class RetrievalServiceIntegrationTest {
         val result = retrievalService.retrieve(queryIncident)
 
         // Assert
-        assertTrue(result is RetrievalResult.Success)
-        val context = (result as RetrievalResult.Success).context
+        assertTrue(result is Either.Right)
+        val context = (result as Either.Right).value
         assertTrue(context.query.contains("HIGH"))
     }
 }

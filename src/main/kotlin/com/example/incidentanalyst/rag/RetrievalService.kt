@@ -1,10 +1,10 @@
 package com.example.incidentanalyst.rag
 
+import com.example.incidentanalyst.common.Either
 import com.example.incidentanalyst.incident.Incident
 import com.example.incidentanalyst.incident.IncidentId
 import com.example.incidentanalyst.runbook.RunbookFragment
 import com.example.incidentanalyst.runbook.RunbookFragmentId
-import dev.langchain4j.data.embedding.Embedding
 import dev.langchain4j.data.segment.TextSegment
 import dev.langchain4j.model.embedding.EmbeddingModel
 import jakarta.enterprise.context.ApplicationScoped
@@ -24,21 +24,21 @@ class RetrievalService @Inject constructor(
     private val runbookEmbeddingRepository: RunbookEmbeddingRepository
 ) {
 
-    fun retrieve(incident: Incident): RetrievalResult {
+    fun retrieve(incident: Incident): Either<RetrievalError, RetrievalContext> {
         if (incident.title.isBlank() && incident.description.isBlank()) {
-            return RetrievalResult.Failure(RetrievalError.InvalidQuery)
+            return Either.Left(RetrievalError.InvalidQuery)
         }
 
         val query = buildQueryFromIncident(incident)
 
         if (query.isBlank()) {
-            return RetrievalResult.Failure(RetrievalError.InvalidQuery)
+            return Either.Left(RetrievalError.InvalidQuery)
         }
 
         val queryEmbedding = try {
             embeddingModel.embed(TextSegment.from(query)).content().vector()
         } catch (e: Exception) {
-            return RetrievalResult.Failure(RetrievalError.ModelUnavailable)
+            return Either.Left(RetrievalError.ModelUnavailable)
         }
 
         val queryEmbeddingBytes = floatArrayToByteArray(queryEmbedding)
@@ -50,7 +50,7 @@ class RetrievalService @Inject constructor(
                 limit = 5
             )
         } catch (e: Exception) {
-            return RetrievalResult.Failure(RetrievalError.SearchFailed)
+            return Either.Left(RetrievalError.SearchFailed)
         }
 
         val similarRunbooks = try {
@@ -60,7 +60,7 @@ class RetrievalService @Inject constructor(
                 limit = 2
             )
         } catch (e: Exception) {
-            return RetrievalResult.Failure(RetrievalError.SearchFailed)
+            return Either.Left(RetrievalError.SearchFailed)
         }
 
         val context = RetrievalContext(
@@ -81,24 +81,24 @@ class RetrievalService @Inject constructor(
             query = query
         )
 
-        return RetrievalResult.Success(context)
+        return Either.Right(context)
     }
 
-    fun retrieveForRunbook(fragment: RunbookFragment): RetrievalResult {
+    fun retrieveForRunbook(fragment: RunbookFragment): Either<RetrievalError, RetrievalContext> {
         if (fragment.title.isBlank() && fragment.content.isBlank()) {
-            return RetrievalResult.Failure(RetrievalError.InvalidQuery)
+            return Either.Left(RetrievalError.InvalidQuery)
         }
 
         val query = buildQueryFromRunbook(fragment)
 
         if (query.isBlank()) {
-            return RetrievalResult.Failure(RetrievalError.InvalidQuery)
+            return Either.Left(RetrievalError.InvalidQuery)
         }
 
         val queryEmbedding = try {
             embeddingModel.embed(TextSegment.from(query)).content().vector()
         } catch (e: Exception) {
-            return RetrievalResult.Failure(RetrievalError.ModelUnavailable)
+            return Either.Left(RetrievalError.ModelUnavailable)
         }
 
         val queryEmbeddingBytes = floatArrayToByteArray(queryEmbedding)
@@ -110,7 +110,7 @@ class RetrievalService @Inject constructor(
                 limit = 5
             )
         } catch (e: Exception) {
-            return RetrievalResult.Failure(RetrievalError.SearchFailed)
+            return Either.Left(RetrievalError.SearchFailed)
         }
 
         val similarRunbooks = try {
@@ -120,7 +120,7 @@ class RetrievalService @Inject constructor(
                 limit = 2
             )
         } catch (e: Exception) {
-            return RetrievalResult.Failure(RetrievalError.SearchFailed)
+            return Either.Left(RetrievalError.SearchFailed)
         }
 
         val context = RetrievalContext(
@@ -141,7 +141,7 @@ class RetrievalService @Inject constructor(
             query = query
         )
 
-        return RetrievalResult.Success(context)
+        return Either.Right(context)
     }
 
     private fun buildQueryFromIncident(incident: Incident): String = """

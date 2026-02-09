@@ -1,11 +1,9 @@
 package com.example.incidentanalyst.aws
 
+import com.example.incidentanalyst.common.Either
 import io.quarkus.test.junit.QuarkusTest
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import jakarta.inject.Inject
-import java.time.Instant
 
 @QuarkusTest
 class MockCloudWatchAlarmClientTest {
@@ -19,16 +17,16 @@ class MockCloudWatchAlarmClientTest {
 
         org.hamcrest.MatcherAssert.assertThat(
             result,
-            org.hamcrest.Matchers.instanceOf(AlarmQueryResult.Success::class.java)
+            org.hamcrest.Matchers.instanceOf(Either.Right::class.java)
         )
 
-        val successResult = result as AlarmQueryResult.Success
+        val successResult = (result as Either.Right).value
         org.hamcrest.MatcherAssert.assertThat(
-            successResult.alarms.size,
+            successResult.size,
             org.hamcrest.Matchers.equalTo(3)
         )
 
-        val alarmNames = successResult.alarms.map { it.alarmName }
+        val alarmNames = successResult.map { it.alarmName }
         org.hamcrest.MatcherAssert.assertThat(
             alarmNames,
             org.hamcrest.Matchers.containsInAnyOrder(
@@ -42,21 +40,21 @@ class MockCloudWatchAlarmClientTest {
     @Test
     fun `returns correct thresholds for each severity`() {
         val result = mockCloudWatchAlarmClient.listAlarmsInAlarmState()
-        val successResult = result as AlarmQueryResult.Success
+        val successResult = (result as Either.Right).value
 
-        val highSeverityAlarm = successResult.alarms.find { it.alarmName == "HighCPUAlarm" }
+        val highSeverityAlarm = successResult.find { it.alarmName == "HighCPUAlarm" }
         org.hamcrest.MatcherAssert.assertThat(
             highSeverityAlarm?.threshold,
             org.hamcrest.Matchers.equalTo("90")
         )
 
-        val mediumSeverityAlarm = successResult.alarms.find { it.alarmName == "MediumDiskAlarm" }
+        val mediumSeverityAlarm = successResult.find { it.alarmName == "MediumDiskAlarm" }
         org.hamcrest.MatcherAssert.assertThat(
             mediumSeverityAlarm?.threshold,
             org.hamcrest.Matchers.equalTo("70")
         )
 
-        val lowSeverityAlarm = successResult.alarms.find { it.alarmName == "LowMemoryAlarm" }
+        val lowSeverityAlarm = successResult.find { it.alarmName == "LowMemoryAlarm" }
         org.hamcrest.MatcherAssert.assertThat(
             lowSeverityAlarm?.threshold,
             org.hamcrest.Matchers.equalTo("50")
@@ -66,9 +64,9 @@ class MockCloudWatchAlarmClientTest {
     @Test
     fun `returns alarms in ALARM state`() {
         val result = mockCloudWatchAlarmClient.listAlarmsInAlarmState()
-        val successResult = result as AlarmQueryResult.Success
+        val successResult = (result as Either.Right).value
 
-        successResult.alarms.forEach { alarm ->
+        successResult.forEach { alarm ->
             org.hamcrest.MatcherAssert.assertThat(
                 alarm.stateValue,
                 org.hamcrest.Matchers.equalTo("ALARM")
@@ -79,9 +77,9 @@ class MockCloudWatchAlarmClientTest {
     @Test
     fun `returns alarms with required fields`() {
         val result = mockCloudWatchAlarmClient.listAlarmsInAlarmState()
-        val successResult = result as AlarmQueryResult.Success
+        val successResult = (result as Either.Right).value
 
-        val alarm = successResult.alarms.first()
+        val alarm = successResult.first()
 
         org.hamcrest.MatcherAssert.assertThat(
             alarm.alarmName,
