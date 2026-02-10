@@ -1,26 +1,25 @@
 package com.example.incidentanalyst.home
 
-data class StatsViewModel(
+data class DashboardStatsViewModel(
+    val systemHealth: Double,
+    val uptime: Double,
     val totalIncidents: Int,
     val activeIncidents: Int,
-    val recentDiagnoses: Int,
-    val meanResolutionTime: String?,
-    val systemHealth: Double,
-    val uptime: String
+    val diagnosedIncidents: Int,
+    val avgResolutionTime: String
 )
 
-data class IncidentCardViewModel(
+data class HomeIncidentItemViewModel(
     val id: Long,
-    val title: String,
     val source: String,
     val severity: String,
     val severityColor: String,
+    val title: String,
+    val description: String,
     val status: String,
     val statusColor: String,
-    val createdAt: String,
-    val shortDescription: String,
-    val tags: List<String>,
-    val updatedAt: String
+    val updatedAt: String,
+    val tags: List<String>
 )
 
 data class ActiveIncidentViewModel(
@@ -46,16 +45,14 @@ data class DiagnosisStepViewModel(
     val statusColor: String
 )
 
-data class RunbookStepViewModel(
-    val step: Int,
+data class ResponseStepViewModel(
     val title: String,
     val description: String,
-    val completed: Boolean
+    val status: String,
+    val statusColor: String
 )
 
-data class ActionCardViewModel(
-    val label: String,
-    val href: String,
-    val description: String,
-    val icon: String
+data class ResponsePlanViewModel(
+    val name: String,
+    val steps: List<ResponseStepViewModel>
 )
