@@ -13,8 +13,7 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito
-import org.mockito.Mockito.reset
+import org.mockito.kotlin.*
 import java.time.Instant
 
 @QuarkusTest
@@ -31,8 +30,7 @@ class CloudWatchIngestionServiceTest {
 
     @BeforeEach
     fun setup() {
-        reset(cloudWatchAlarmClient)
-        reset(incidentService)
+        reset(cloudWatchAlarmClient, incidentService)
     }
 
     @Test
@@ -517,7 +515,7 @@ class CloudWatchIngestionServiceTest {
     @Test
     fun `ingestAlarms returns Success when no alarms`() {
         val queryResult = Either.Right(emptyList<AlarmDto>())
-        org.mockito.Mockito.`when`(cloudWatchAlarmClient.listAlarmsInAlarmState())
+        whenever(cloudWatchAlarmClient.listAlarmsInAlarmState())
             .thenReturn(queryResult)
 
         val result = cloudWatchIngestionService.ingestAlarms()
@@ -530,7 +528,7 @@ class CloudWatchIngestionServiceTest {
     @Test
     fun `ingestAlarms returns Failure on AWS Throttled error`() {
         val queryResult = Either.Left(AwsError.Throttled)
-        org.mockito.Mockito.`when`(cloudWatchAlarmClient.listAlarmsInAlarmState())
+        whenever(cloudWatchAlarmClient.listAlarmsInAlarmState())
             .thenReturn(queryResult)
 
         val result = cloudWatchIngestionService.ingestAlarms()
@@ -545,7 +543,7 @@ class CloudWatchIngestionServiceTest {
     @Test
     fun `ingestAlarms returns Failure on AWS Unauthorized error`() {
         val queryResult = Either.Left(AwsError.Unauthorized)
-        org.mockito.Mockito.`when`(cloudWatchAlarmClient.listAlarmsInAlarmState())
+        whenever(cloudWatchAlarmClient.listAlarmsInAlarmState())
             .thenReturn(queryResult)
 
         val result = cloudWatchIngestionService.ingestAlarms()
@@ -560,7 +558,7 @@ class CloudWatchIngestionServiceTest {
     @Test
     fun `ingestAlarms returns Failure on AWS NetworkError`() {
         val queryResult = Either.Left(AwsError.NetworkError)
-        org.mockito.Mockito.`when`(cloudWatchAlarmClient.listAlarmsInAlarmState())
+        whenever(cloudWatchAlarmClient.listAlarmsInAlarmState())
             .thenReturn(queryResult)
 
         val result = cloudWatchIngestionService.ingestAlarms()
@@ -575,7 +573,7 @@ class CloudWatchIngestionServiceTest {
     @Test
     fun `ingestAlarms returns Failure on AWS ServiceUnavailable`() {
         val queryResult = Either.Left(AwsError.ServiceUnavailable)
-        org.mockito.Mockito.`when`(cloudWatchAlarmClient.listAlarmsInAlarmState())
+        whenever(cloudWatchAlarmClient.listAlarmsInAlarmState())
             .thenReturn(queryResult)
 
         val result = cloudWatchIngestionService.ingestAlarms()
@@ -590,7 +588,7 @@ class CloudWatchIngestionServiceTest {
     @Test
     fun `ingestAlarms returns Failure on AWS Unknown error`() {
         val queryResult = Either.Left(AwsError.Unknown("Some error"))
-        org.mockito.Mockito.`when`(cloudWatchAlarmClient.listAlarmsInAlarmState())
+        whenever(cloudWatchAlarmClient.listAlarmsInAlarmState())
             .thenReturn(queryResult)
 
         val result = cloudWatchIngestionService.ingestAlarms()
@@ -616,13 +614,13 @@ class CloudWatchIngestionServiceTest {
             comparisonOperator = "GreaterThanThreshold"
         )
         val queryResult = Either.Right(listOf(alarm))
-        org.mockito.Mockito.`when`(cloudWatchAlarmClient.listAlarmsInAlarmState())
+        whenever(cloudWatchAlarmClient.listAlarmsInAlarmState())
             .thenReturn(queryResult)
 
         val expectedIncident = cloudWatchIngestionService.mapAlarmToIncident(alarm)
         assertNotNull(expectedIncident)
 
-        org.mockito.Mockito.`when`(incidentService.create(expectedIncident!!))
+        whenever(incidentService.create(expectedIncident!!))
             .thenThrow(RuntimeException("Database error"))
 
         val result = cloudWatchIngestionService.ingestAlarms()
@@ -658,7 +656,7 @@ class CloudWatchIngestionServiceTest {
             comparisonOperator = "GreaterThanThreshold"
         )
         val queryResult = Either.Right(listOf(alarm1, alarm2))
-        org.mockito.Mockito.`when`(cloudWatchAlarmClient.listAlarmsInAlarmState())
+        whenever(cloudWatchAlarmClient.listAlarmsInAlarmState())
             .thenReturn(queryResult)
 
         val result = cloudWatchIngestionService.ingestAlarms()
@@ -694,7 +692,7 @@ class CloudWatchIngestionServiceTest {
             comparisonOperator = "GreaterThanThreshold"
         )
         val queryResult = Either.Right(listOf(alarm1, alarm2))
-        org.mockito.Mockito.`when`(cloudWatchAlarmClient.listAlarmsInAlarmState())
+        whenever(cloudWatchAlarmClient.listAlarmsInAlarmState())
             .thenReturn(queryResult)
 
         val result = cloudWatchIngestionService.ingestAlarms()

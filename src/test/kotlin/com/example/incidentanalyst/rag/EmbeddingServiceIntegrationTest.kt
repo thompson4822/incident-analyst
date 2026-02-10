@@ -25,8 +25,7 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.`when`
-import org.mockito.Mockito.reset
+import org.mockito.kotlin.*
 import java.time.Instant
 
 @QuarkusTest
@@ -54,7 +53,7 @@ class EmbeddingServiceIntegrationTest {
     @Transactional
     fun setup() {
         reset(embeddingModel)
-        `when`(embeddingModel.embed(org.mockito.Mockito.any(TextSegment::class.java)))
+        whenever(embeddingModel.embed(any<TextSegment>()))
             .thenReturn(Response.from(Embedding.from(createMockEmbedding())))
 
         incidentEmbeddingRepository.deleteAll()

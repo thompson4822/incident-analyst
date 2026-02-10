@@ -12,8 +12,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito
-import org.mockito.Mockito.reset
+import org.mockito.kotlin.*
 import java.time.Instant
 
 @QuarkusTest
@@ -115,7 +114,7 @@ class CloudWatchTestDataGeneratorServiceTest {
         val timestamp = Instant.parse("2024-01-01T00:00:00Z")
         val incident1 = baseIncident(timestamp, IncidentId(100))
         val incident2 = baseIncident(timestamp, IncidentId(101))
-        Mockito.`when`(incidentService.create(any<Incident>()))
+        whenever(incidentService.create(any<Incident>()))
             .thenReturn(incident1, incident2)
 
         val request = CloudWatchTestDataRequestDto(count = 2)
@@ -130,7 +129,7 @@ class CloudWatchTestDataGeneratorServiceTest {
 
     @Test
     fun `generateAlarms returns severity breakdown for created incidents`() {
-        Mockito.`when`(incidentService.create(any<Incident>()))
+        whenever(incidentService.create(any<Incident>()))
             .thenAnswer { invocation -> invocation.getArgument(0) as Incident }
 
         val request = CloudWatchTestDataRequestDto(
@@ -147,7 +146,7 @@ class CloudWatchTestDataGeneratorServiceTest {
 
     @Test
     fun `generateAlarms includes seedUsed when seed is provided`() {
-        Mockito.`when`(incidentService.create(any<Incident>()))
+        whenever(incidentService.create(any<Incident>()))
             .thenAnswer { invocation -> invocation.getArgument(0) as Incident }
 
         val request = CloudWatchTestDataRequestDto(
@@ -164,7 +163,7 @@ class CloudWatchTestDataGeneratorServiceTest {
 
     @Test
     fun `generateAlarms has seedUsed null when seed is not provided`() {
-        Mockito.`when`(incidentService.create(any<Incident>()))
+        whenever(incidentService.create(any<Incident>()))
             .thenAnswer { invocation -> invocation.getArgument(0) as Incident }
 
         val request = CloudWatchTestDataRequestDto(count = 1)
@@ -178,7 +177,7 @@ class CloudWatchTestDataGeneratorServiceTest {
 
     @Test
     fun `generateAlarms is deterministic with same seed`() {
-        Mockito.`when`(incidentService.create(any<Incident>()))
+        whenever(incidentService.create(any<Incident>()))
             .thenAnswer { invocation -> invocation.getArgument(0) as Incident }
 
         val request = CloudWatchTestDataRequestDto(
@@ -268,6 +267,4 @@ class CloudWatchTestDataGeneratorServiceTest {
         createdAt = timestamp,
         updatedAt = timestamp
     )
-
-    private fun <T> any(): T = org.mockito.ArgumentMatchers.any()
 }

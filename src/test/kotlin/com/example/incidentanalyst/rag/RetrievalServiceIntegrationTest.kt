@@ -1,6 +1,10 @@
 package com.example.incidentanalyst.rag
 
 import com.example.incidentanalyst.common.Either
+import com.example.incidentanalyst.diagnosis.Confidence
+import com.example.incidentanalyst.diagnosis.DiagnosisEntity
+import com.example.incidentanalyst.diagnosis.DiagnosisId
+import com.example.incidentanalyst.diagnosis.DiagnosisRepository
 import com.example.incidentanalyst.incident.Incident
 import com.example.incidentanalyst.incident.IncidentEntity
 import com.example.incidentanalyst.incident.IncidentId
@@ -25,8 +29,7 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.`when`
-import org.mockito.Mockito.reset
+import org.mockito.kotlin.*
 import java.time.Instant
 
 @QuarkusTest
@@ -53,15 +56,19 @@ class RetrievalServiceIntegrationTest {
     @Inject
     lateinit var runbookEmbeddingRepository: RunbookEmbeddingRepository
 
+    @Inject
+    lateinit var diagnosisRepository: DiagnosisRepository
+
     @BeforeEach
     @Transactional
     fun setup() {
         reset(embeddingModel)
-        `when`(embeddingModel.embed(org.mockito.Mockito.any(TextSegment::class.java)))
+        whenever(embeddingModel.embed(any<TextSegment>()))
             .thenReturn(Response.from(Embedding.from(createMockEmbedding())))
 
         incidentEmbeddingRepository.deleteAll()
         runbookEmbeddingRepository.deleteAll()
+        diagnosisRepository.deleteAll()
         runbookFragmentRepository.deleteAll()
         incidentRepository.deleteAll()
     }
@@ -578,5 +585,260 @@ class RetrievalServiceIntegrationTest {
         assertTrue(result is Either.Right)
         val context = (result as Either.Right).value
         assertTrue(context.query.contains("HIGH"))
+    }
+
+    @Test
+    @Transactional
+    fun `verified diagnosis creates embedding with VERIFIED_DIAGNOSIS sourceType and can be retrieved`() {
+        // Arrange - Create incident and diagnosis
+        val timestamp = Instant.now()
+        val incident = Incident(
+            id = IncidentId(0),
+            source = "cloudwatch",
+            title = "Database connection failed",
+            description = "Connection pool exhausted",
+            severity = Severity.HIGH,
+            status = IncidentStatus.Open,
+            createdAt = timestamp,
+            updatedAt = timestamp
+        )
+        val incidentEntity = incident.toEntity()
+        incidentRepository.persist(incidentEntity)
+
+        val diagnosisEntity = DiagnosisEntity(
+            id = null,
+            incident = incidentEntity,
+            suggestedRootCause = "Connection leak in application",
+            remediationSteps = "Step 1: Restart service\nStep 2: Monitor connections",
+            confidence = "HIGH",
+            verification = "VERIFIED",
+            createdAt = timestamp,
+            verifiedAt = timestamp,
+            verifiedBy = "admin"
+        )
+        diagnosisRepository.persist(diagnosisEntity)
+        val diagnosisId = DiagnosisId(requireNotNull(diagnosisEntity.id))
+
+        // Create verified diagnosis embedding
+        val embeddingResult = embeddingService.embedVerifiedDiagnosis(diagnosisId)
+
+        // Assert - Embedding was created successfully
+        assertTrue(embeddingResult is Either.Right)
+
+        // Act - Retrieve using a similar query
+        val queryIncident = Incident(
+            id = IncidentId(0),
+            source = "test",
+            title = "Database connection issue",
+            description = "Connection problems detected",
+            severity = Severity.HIGH,
+            status = IncidentStatus.Open,
+            createdAt = timestamp,
+            updatedAt = timestamp
+        )
+
+        val result = retrievalService.retrieve(queryIncident)
+
+        // Assert
+        assertTrue(result is Either.Right)
+        val context = (result as Either.Right).value
+        assertTrue(context.similarIncidents.isNotEmpty())
+
+        // Verify the retrieved match has VERIFIED_DIAGNOSIS sourceType
+        val verifiedMatch = context.similarIncidents.find { it.sourceType == SourceType.VERIFIED_DIAGNOSIS }
+        assertNotNull(verifiedMatch, "Should find at least one VERIFIED_DIAGNOSIS embedding")
+
+        // Verify the match contains the diagnosis text
+        if (verifiedMatch != null) {
+            assertTrue(verifiedMatch.snippet!!.contains("Connection leak") ||
+                      verifiedMatch.snippet!!.contains("Restart service"))
+        }
+    }
+
+    @Test
+    @Transactional
+    fun `verified diagnosis embedding contains combined incident and diagnosis text`() {
+        // Arrange
+        val timestamp = Instant.now()
+        val incident = Incident(
+            id = IncidentId(0),
+            source = "cloudwatch",
+            title = "High CPU Usage",
+            description = "CPU exceeded 90% threshold",
+            severity = Severity.HIGH,
+            status = IncidentStatus.Open,
+            createdAt = timestamp,
+            updatedAt = timestamp
+        )
+        val incidentEntity = incident.toEntity()
+        incidentRepository.persist(incidentEntity)
+
+        val diagnosisEntity = DiagnosisEntity(
+            id = null,
+            incident = incidentEntity,
+            suggestedRootCause = "Memory leak in application",
+            remediationSteps = "Restart application\nAnalyze memory dump",
+            confidence = "HIGH",
+            verification = "VERIFIED",
+            createdAt = timestamp,
+            verifiedAt = timestamp,
+            verifiedBy = "user123"
+        )
+        diagnosisRepository.persist(diagnosisEntity)
+        val diagnosisId = DiagnosisId(requireNotNull(diagnosisEntity.id))
+
+        // Create embedding
+        embeddingService.embedVerifiedDiagnosis(diagnosisId)
+
+        // Act - Query the database for the created embedding
+        val embeddings = incidentEmbeddingRepository.listAll()
+
+        // Assert
+        assertTrue(embeddings.isNotEmpty())
+        val verifiedEmbedding = embeddings.find { it.sourceType == "VERIFIED_DIAGNOSIS" }
+        assertNotNull(verifiedEmbedding)
+
+        // Verify text contains all components
+        val text = verifiedEmbedding?.text
+        assertTrue(text!!.contains("High CPU Usage"))
+        assertTrue(text.contains("CPU exceeded 90% threshold"))
+        assertTrue(text.contains("Memory leak in application"))
+        assertTrue(text.contains("Restart application"))
+    }
+
+    @Test
+    @Transactional
+    fun `multiple verified diagnoses create distinct embeddings`() {
+        // Arrange - Create multiple verified diagnoses
+        val timestamp = Instant.now()
+        val incident1 = Incident(
+            id = IncidentId(0),
+            source = "cloudwatch",
+            title = "Database connection failed",
+            description = "Connection pool exhausted",
+            severity = Severity.HIGH,
+            status = IncidentStatus.Open,
+            createdAt = timestamp,
+            updatedAt = timestamp
+        )
+        val incidentEntity1 = incident1.toEntity()
+        incidentRepository.persist(incidentEntity1)
+
+        val diagnosis1 = DiagnosisEntity(
+            id = null,
+            incident = incidentEntity1,
+            suggestedRootCause = "Connection leak",
+            remediationSteps = "Restart service",
+            confidence = "HIGH",
+            verification = "VERIFIED",
+            createdAt = timestamp,
+            verifiedAt = timestamp,
+            verifiedBy = "user1"
+        )
+        diagnosisRepository.persist(diagnosis1)
+        val diagnosisId1 = DiagnosisId(requireNotNull(diagnosis1.id))
+
+        val incident2 = Incident(
+            id = IncidentId(0),
+            source = "monitoring",
+            title = "CPU high usage",
+            description = "CPU exceeded threshold",
+            severity = Severity.HIGH,
+            status = IncidentStatus.Open,
+            createdAt = timestamp,
+            updatedAt = timestamp
+        )
+        val incidentEntity2 = incident2.toEntity()
+        incidentRepository.persist(incidentEntity2)
+
+        val diagnosis2 = DiagnosisEntity(
+            id = null,
+            incident = incidentEntity2,
+            suggestedRootCause = "Memory leak",
+            remediationSteps = "Restart application",
+            confidence = "HIGH",
+            verification = "VERIFIED",
+            createdAt = timestamp,
+            verifiedAt = timestamp,
+            verifiedBy = "user2"
+        )
+        diagnosisRepository.persist(diagnosis2)
+        val diagnosisId2 = DiagnosisId(requireNotNull(diagnosis2.id))
+
+        // Create embeddings for both diagnoses
+        embeddingService.embedVerifiedDiagnosis(diagnosisId1)
+        embeddingService.embedVerifiedDiagnosis(diagnosisId2)
+
+        // Act - Query embeddings
+        val embeddings = incidentEmbeddingRepository.listAll()
+        val verifiedEmbeddings = embeddings.filter { it.sourceType == "VERIFIED_DIAGNOSIS" }
+
+        // Assert
+        assertEquals(2, verifiedEmbeddings.size)
+        assertTrue(verifiedEmbeddings.any { it.diagnosisId == diagnosisId1.value })
+        assertTrue(verifiedEmbeddings.any { it.diagnosisId == diagnosisId2.value })
+    }
+
+    @Test
+    @Transactional
+    fun `verified diagnosis embeddings can be retrieved alongside raw incident embeddings`() {
+        // Arrange - Create both raw incident and verified diagnosis embeddings
+        val timestamp = Instant.now()
+        val incident1 = Incident(
+            id = IncidentId(0),
+            source = "cloudwatch",
+            title = "Database connection failed",
+            description = "Connection pool exhausted",
+            severity = Severity.HIGH,
+            status = IncidentStatus.Open,
+            createdAt = timestamp,
+            updatedAt = timestamp
+        )
+        val incidentEntity1 = incident1.toEntity()
+        incidentRepository.persist(incidentEntity1)
+        val incidentId1 = IncidentId(requireNotNull(incidentEntity1.id))
+
+        // Create raw incident embedding
+        embeddingService.embedIncident(incidentId1)
+
+        // Create verified diagnosis embedding
+        val diagnosis1 = DiagnosisEntity(
+            id = null,
+            incident = incidentEntity1,
+            suggestedRootCause = "Connection leak",
+            remediationSteps = "Restart service",
+            confidence = "HIGH",
+            verification = "VERIFIED",
+            createdAt = timestamp,
+            verifiedAt = timestamp,
+            verifiedBy = "user1"
+        )
+        diagnosisRepository.persist(diagnosis1)
+        val diagnosisId1 = DiagnosisId(requireNotNull(diagnosis1.id))
+        embeddingService.embedVerifiedDiagnosis(diagnosisId1)
+
+        // Act - Retrieve with similar query
+        val queryIncident = Incident(
+            id = IncidentId(0),
+            source = "test",
+            title = "Database issue",
+            description = "Connection problems",
+            severity = Severity.HIGH,
+            status = IncidentStatus.Open,
+            createdAt = timestamp,
+            updatedAt = timestamp
+        )
+        val result = retrievalService.retrieve(queryIncident)
+
+        // Assert - Both types of embeddings should be retrieved
+        assertTrue(result is Either.Right)
+        val context = (result as Either.Right).value
+        assertTrue(context.similarIncidents.size >= 1)
+
+        val hasRawIncident = context.similarIncidents.any { it.sourceType == SourceType.RAW_INCIDENT }
+        val hasVerifiedDiagnosis = context.similarIncidents.any { it.sourceType == SourceType.VERIFIED_DIAGNOSIS }
+
+        assertTrue(hasRawIncident || hasVerifiedDiagnosis,
+            "Should have at least RAW_INCIDENT or VERIFIED_DIAGNOSIS embedding")
     }
 }

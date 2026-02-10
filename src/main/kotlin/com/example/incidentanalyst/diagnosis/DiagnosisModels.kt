@@ -23,7 +23,9 @@ data class Diagnosis(
     val steps: List<String>,
     val confidence: Confidence,
     val verification: DiagnosisVerification,
-    val createdAt: Instant
+    val createdAt: Instant,
+    val verifiedAt: Instant? = null,
+    val verifiedBy: String? = null
 )
 
 sealed interface DiagnosisError {
@@ -51,7 +53,9 @@ fun DiagnosisEntity.toDomain(): Diagnosis =
             "VERIFIED" -> DiagnosisVerification.VerifiedByHuman
             else -> DiagnosisVerification.Unverified
         },
-        createdAt = createdAt
+        createdAt = createdAt,
+        verifiedAt = verifiedAt,
+        verifiedBy = verifiedBy
     )
 
 fun Diagnosis.toEntity(incidentEntity: IncidentEntity): DiagnosisEntity =
@@ -65,5 +69,7 @@ fun Diagnosis.toEntity(incidentEntity: IncidentEntity): DiagnosisEntity =
             DiagnosisVerification.VerifiedByHuman -> "VERIFIED"
             DiagnosisVerification.Unverified -> "UNVERIFIED"
         },
-        createdAt = createdAt
+        createdAt = createdAt,
+        verifiedAt = verifiedAt,
+        verifiedBy = verifiedBy
     )

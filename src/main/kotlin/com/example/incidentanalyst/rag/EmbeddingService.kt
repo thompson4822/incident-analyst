@@ -1,6 +1,9 @@
 package com.example.incidentanalyst.rag
 
 import com.example.incidentanalyst.common.Either
+import com.example.incidentanalyst.diagnosis.DiagnosisEntity
+import com.example.incidentanalyst.diagnosis.DiagnosisId
+import com.example.incidentanalyst.diagnosis.DiagnosisRepository
 import com.example.incidentanalyst.incident.IncidentId
 import com.example.incidentanalyst.incident.IncidentRepository
 import com.example.incidentanalyst.runbook.RunbookFragmentId
@@ -18,7 +21,8 @@ class EmbeddingService(
     private val incidentRepository: IncidentRepository,
     private val incidentEmbeddingRepository: IncidentEmbeddingRepository,
     private val runbookFragmentRepository: RunbookFragmentRepository,
-    private val runbookEmbeddingRepository: RunbookEmbeddingRepository
+    private val runbookEmbeddingRepository: RunbookEmbeddingRepository,
+    private val diagnosisRepository: DiagnosisRepository
 ) {
 
     @Transactional
@@ -121,6 +125,44 @@ class EmbeddingService(
         }
 
         return Either.Right(count)
+    }
+
+    @Transactional
+    fun embedVerifiedDiagnosis(diagnosisId: DiagnosisId): Either<EmbeddingError, Int> {
+        val diagnosis = diagnosisRepository.findById(diagnosisId.value)
+            ?: return Either.Left(EmbeddingError.Unexpected)
+
+        val incident = diagnosis.incident
+            ?: return Either.Left(EmbeddingError.Unexpected)
+
+        val text = buildString {
+            append("Title: ").append(incident.title).append("\n")
+            append("Description: ").append(incident.description).append("\n")
+            append("Root Cause: ").append(diagnosis.suggestedRootCause).append("\n")
+            append("Remediation Steps: ").append(diagnosis.remediationSteps)
+        }.trim()
+
+        return try {
+            val embedding = embeddingModel.embed(TextSegment.from(text)).content().vector()
+            val embeddingBytes = floatArrayToByteArray(embedding)
+
+            val entity = IncidentEmbeddingEntity(
+                incident = incident,
+                text = text,
+                embedding = embeddingBytes,
+                sourceType = "VERIFIED_DIAGNOSIS",
+                diagnosisId = diagnosis.id
+            )
+
+            incidentEmbeddingRepository.persist(entity)
+            Either.Right(1)
+        } catch (e: ConstraintViolationException) {
+            Either.Left(
+                EmbeddingError.PersistenceError(e.message ?: "Constraint violation")
+            )
+        } catch (e: Exception) {
+            Either.Left(EmbeddingError.EmbeddingFailed)
+        }
     }
 }
 

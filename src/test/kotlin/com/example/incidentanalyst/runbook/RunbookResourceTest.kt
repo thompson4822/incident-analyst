@@ -11,8 +11,7 @@ import org.hamcrest.CoreMatchers.nullValue
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.reset
-import org.mockito.Mockito.`when`
+import org.mockito.kotlin.*
 import java.time.Instant
 
 @QuarkusTest
@@ -44,7 +43,7 @@ class RunbookResourceTest {
             tags = "tag2",
             createdAt = baseTime.minusSeconds(3600)
         )
-        `when`(runbookService.search(null, null)).thenReturn(listOf(fragment1, fragment2))
+        whenever(runbookService.search(null, null)).thenReturn(listOf(fragment1, fragment2))
 
         // Act & Assert
         given()
@@ -64,7 +63,7 @@ class RunbookResourceTest {
     @Test
     fun `GET returns empty list when no fragments exist`() {
         // Arrange
-        `when`(runbookService.search(null, null)).thenReturn(emptyList())
+        whenever(runbookService.search(null, null)).thenReturn(emptyList())
 
         // Act & Assert
         given()
@@ -89,7 +88,7 @@ class RunbookResourceTest {
             tags = "tag1,tag2",
             createdAt = testTimestamp
         )
-        `when`(runbookService.getById(RunbookFragmentId(testId)))
+        whenever(runbookService.getById(RunbookFragmentId(testId)))
             .thenReturn(Either.Right(fragment))
 
         // Act & Assert
@@ -110,7 +109,7 @@ class RunbookResourceTest {
     fun `GET by id returns 404 for non-existent fragment`() {
         // Arrange
         val testId = 999L
-        `when`(runbookService.getById(RunbookFragmentId(testId)))
+        whenever(runbookService.getById(RunbookFragmentId(testId)))
             .thenReturn(Either.Left(RunbookFragmentError.NotFound))
 
         // Act & Assert
@@ -135,7 +134,7 @@ class RunbookResourceTest {
             tags = null,
             createdAt = testTimestamp
         )
-        `when`(runbookService.getById(RunbookFragmentId(testId)))
+        whenever(runbookService.getById(RunbookFragmentId(testId)))
             .thenReturn(Either.Right(fragment))
 
         // Act & Assert
@@ -162,7 +161,7 @@ class RunbookResourceTest {
             tags = "updated,tag",
             createdAt = testTimestamp
         )
-        `when`(runbookService.updateFragment(
+        whenever(runbookService.updateFragment(
             RunbookFragmentId(testId),
             "Updated Title",
             "Updated Content",
@@ -187,7 +186,7 @@ class RunbookResourceTest {
     fun `PUT returns 404 for non-existent fragment`() {
         // Arrange
         val testId = 999L
-        `when`(runbookService.updateFragment(
+        whenever(runbookService.updateFragment(
             RunbookFragmentId(testId),
             "Title",
             "Content",
@@ -208,7 +207,7 @@ class RunbookResourceTest {
     fun `PUT returns 400 for ValidationFailed error with blank title`() {
         // Arrange
         val testId = 123L
-        `when`(runbookService.updateFragment(
+        whenever(runbookService.updateFragment(
             RunbookFragmentId(testId),
             "   ",
             "Content",
@@ -230,7 +229,7 @@ class RunbookResourceTest {
     fun `PUT returns 400 for ValidationFailed error with blank content`() {
         // Arrange
         val testId = 123L
-        `when`(runbookService.updateFragment(
+        whenever(runbookService.updateFragment(
             RunbookFragmentId(testId),
             "Title",
             "",
@@ -252,7 +251,7 @@ class RunbookResourceTest {
     fun `PUT returns 400 for ValidationFailed error with both blank`() {
         // Arrange
         val testId = 123L
-        `when`(runbookService.updateFragment(
+        whenever(runbookService.updateFragment(
             RunbookFragmentId(testId),
             "",
             "   ",
@@ -282,7 +281,7 @@ class RunbookResourceTest {
             tags = null,
             createdAt = testTimestamp
         )
-        `when`(runbookService.updateFragment(
+        whenever(runbookService.updateFragment(
             RunbookFragmentId(testId),
             "New Title",
             "Original Content",
@@ -312,7 +311,7 @@ class RunbookResourceTest {
             tags = null,
             createdAt = testTimestamp
         )
-        `when`(runbookService.updateFragment(
+        whenever(runbookService.updateFragment(
             RunbookFragmentId(testId),
             "Original Title",
             "New Content",
@@ -342,7 +341,7 @@ class RunbookResourceTest {
             tags = "new,tags",
             createdAt = testTimestamp
         )
-        `when`(runbookService.updateFragment(
+        whenever(runbookService.updateFragment(
             RunbookFragmentId(testId),
             "Title",
             "Content",
@@ -372,7 +371,7 @@ class RunbookResourceTest {
             tags = null,
             createdAt = testTimestamp
         )
-        `when`(runbookService.updateFragment(
+        whenever(runbookService.updateFragment(
             RunbookFragmentId(testId),
             "Title",
             "Content",
@@ -401,7 +400,7 @@ class RunbookResourceTest {
             tags = "tag1,tag2",
             createdAt = baseTime
         )
-        `when`(runbookService.search(null, null)).thenReturn(listOf(fragment))
+        whenever(runbookService.search(null, null)).thenReturn(listOf(fragment))
 
         // Act & Assert
         given()
@@ -429,7 +428,7 @@ class RunbookResourceTest {
             tags = null,
             createdAt = testTimestamp
         )
-        `when`(runbookService.getById(RunbookFragmentId(testId)))
+        whenever(runbookService.getById(RunbookFragmentId(testId)))
             .thenReturn(Either.Right(fragment))
 
         // Act & Assert

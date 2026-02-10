@@ -31,5 +31,9 @@ open class IncidentEmbeddingEntity(
     open var embedding: ByteArray = ByteArray(0),
 
     @Column(name = "created_at")
-    open var createdAt: Instant = Instant.now()
+    open var createdAt: Instant = Instant.now(),
+    @Column(name = "source_type")
+    open var sourceType: String = "RAW_INCIDENT",
+    @Column(name = "diagnosis_id")
+    open var diagnosisId: Long? = null
 ) : PanacheEntityBase

@@ -8,8 +8,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.reset
-import org.mockito.Mockito.`when`
+import org.mockito.kotlin.*
 import java.time.Instant
 
 @QuarkusTest
@@ -47,7 +46,7 @@ class RunbookServiceTest {
             createdAt = baseTime
         )
 
-        `when`(runbookFragmentRepository.findRecent(50)).thenReturn(listOf(newFragment, oldFragment))
+        whenever(runbookFragmentRepository.findRecent(50)).thenReturn(listOf(newFragment, oldFragment))
 
         // Act
         val result = runbookService.listRecent()
@@ -73,7 +72,7 @@ class RunbookServiceTest {
             )
         }
 
-        `when`(runbookFragmentRepository.findRecent(5)).thenReturn(fragments.take(5))
+        whenever(runbookFragmentRepository.findRecent(5)).thenReturn(fragments.take(5))
 
         // Act
         val result = runbookService.listRecent(5)
@@ -87,7 +86,7 @@ class RunbookServiceTest {
     @Test
     fun `listRecent returns empty list when no fragments exist`() {
         // Arrange
-        `when`(runbookFragmentRepository.findRecent(50)).thenReturn(emptyList())
+        whenever(runbookFragmentRepository.findRecent(50)).thenReturn(emptyList())
 
         // Act
         val result = runbookService.listRecent()
@@ -108,7 +107,7 @@ class RunbookServiceTest {
             tags = "tag1,tag2",
             createdAt = testTimestamp
         )
-        `when`(runbookFragmentRepository.findById(testId)).thenReturn(entity)
+        whenever(runbookFragmentRepository.findById(testId)).thenReturn(entity)
 
         // Act
         val result = runbookService.getById(RunbookFragmentId(testId))
@@ -126,7 +125,7 @@ class RunbookServiceTest {
     fun `getById returns Failure NotFound for non-existent fragment`() {
         // Arrange
         val testId = 999L
-        `when`(runbookFragmentRepository.findById(testId)).thenReturn(null)
+        whenever(runbookFragmentRepository.findById(testId)).thenReturn(null)
 
         // Act
         val result = runbookService.getById(RunbookFragmentId(testId))
@@ -149,7 +148,7 @@ class RunbookServiceTest {
             tags = "old,tag",
             createdAt = testTimestamp
         )
-        `when`(runbookFragmentRepository.findById(testId)).thenReturn(entity)
+        whenever(runbookFragmentRepository.findById(testId)).thenReturn(entity)
 
         // Act
         val result = runbookService.updateFragment(
@@ -174,7 +173,7 @@ class RunbookServiceTest {
     fun `updateFragment returns Failure NotFound for non-existent fragment`() {
         // Arrange
         val testId = 999L
-        `when`(runbookFragmentRepository.findById(testId)).thenReturn(null)
+        whenever(runbookFragmentRepository.findById(testId)).thenReturn(null)
 
         // Act
         val result = runbookService.updateFragment(
@@ -202,7 +201,7 @@ class RunbookServiceTest {
             tags = null,
             createdAt = testTimestamp
         )
-        `when`(runbookFragmentRepository.findById(testId)).thenReturn(entity)
+        whenever(runbookFragmentRepository.findById(testId)).thenReturn(entity)
 
         // Act
         val result = runbookService.updateFragment(
@@ -230,7 +229,7 @@ class RunbookServiceTest {
             tags = null,
             createdAt = testTimestamp
         )
-        `when`(runbookFragmentRepository.findById(testId)).thenReturn(entity)
+        whenever(runbookFragmentRepository.findById(testId)).thenReturn(entity)
 
         // Act
         val result = runbookService.updateFragment(
@@ -258,7 +257,7 @@ class RunbookServiceTest {
             tags = null,
             createdAt = testTimestamp
         )
-        `when`(runbookFragmentRepository.findById(testId)).thenReturn(entity)
+        whenever(runbookFragmentRepository.findById(testId)).thenReturn(entity)
 
         // Act
         val result = runbookService.updateFragment(
@@ -286,7 +285,7 @@ class RunbookServiceTest {
             tags = "old,tag",
             createdAt = testTimestamp
         )
-        `when`(runbookFragmentRepository.findById(testId)).thenReturn(entity)
+        whenever(runbookFragmentRepository.findById(testId)).thenReturn(entity)
 
         // Act
         val result = runbookService.updateFragment(

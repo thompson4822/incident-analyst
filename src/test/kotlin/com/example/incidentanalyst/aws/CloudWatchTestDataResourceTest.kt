@@ -8,8 +8,7 @@ import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.CoreMatchers.notNullValue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.`when`
-import org.mockito.Mockito.reset
+import org.mockito.kotlin.*
 
 @QuarkusTest
 class CloudWatchTestDataResourceTest {
@@ -24,7 +23,7 @@ class CloudWatchTestDataResourceTest {
 
     @Test
     fun `POST generate-alarms maps Success response`() {
-        `when`(generatorService.generateAlarms(anyRequest()))
+        whenever(generatorService.generateAlarms(any()))
             .thenReturn(
                 CloudWatchTestDataGenerationResult.Success(
                     generatedCount = 2,
@@ -54,7 +53,7 @@ class CloudWatchTestDataResourceTest {
 
     @Test
     fun `POST generate-alarms maps ValidationError to 400`() {
-        `when`(generatorService.generateAlarms(anyRequest()))
+        whenever(generatorService.generateAlarms(any()))
             .thenReturn(
                 CloudWatchTestDataGenerationResult.ValidationError("Count must be non-negative")
             )
@@ -72,9 +71,4 @@ class CloudWatchTestDataResourceTest {
             .statusCode(400)
             .body("message", notNullValue())
     }
-
-    @Suppress("UNCHECKED_CAST")
-    private fun anyRequest(): CloudWatchTestDataRequestDto =
-        org.mockito.ArgumentMatchers.any(CloudWatchTestDataRequestDto::class.java)
-            ?: CloudWatchTestDataRequestDto()
 }

@@ -4,5 +4,6 @@ data class SimilarIncidentResult(
     val id: Long,
     val incidentId: Long,
     val text: String?,
-    val similarity: Double
+    val similarity: Double,
+    val sourceType: String = "RAW_INCIDENT"
 )

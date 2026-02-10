@@ -1,6 +1,8 @@
 package com.example.incidentanalyst.diagnosis
 
 import com.example.incidentanalyst.common.Either
+import com.example.incidentanalyst.incident.IncidentEntity
+import com.example.incidentanalyst.rag.EmbeddingService
 import io.quarkus.test.InjectMock
 import io.quarkus.test.junit.QuarkusTest
 import jakarta.inject.Inject
@@ -9,11 +11,7 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.anyLong
-import org.mockito.Mockito.reset
-import org.mockito.Mockito.`when`
-import com.example.incidentanalyst.incident.IncidentEntity
-import com.example.incidentanalyst.incident.IncidentId
+import org.mockito.kotlin.*
 import java.time.Instant
 
 @QuarkusTest
@@ -22,12 +20,15 @@ class DiagnosisServiceTest {
     @InjectMock
     lateinit var diagnosisRepository: DiagnosisRepository
 
+    @InjectMock
+    lateinit var embeddingService: EmbeddingService
+
     @Inject
     lateinit var diagnosisService: DiagnosisService
 
     @BeforeEach
     fun setup() {
-        reset(diagnosisRepository)
+        reset(diagnosisRepository, embeddingService)
     }
 
     @Test
@@ -65,7 +66,7 @@ class DiagnosisServiceTest {
             createdAt = baseTime
         )
 
-        `when`(diagnosisRepository.findRecent(50)).thenReturn(listOf(newDiagnosis, oldDiagnosis))
+        whenever(diagnosisRepository.findRecent(50)).thenReturn(listOf(newDiagnosis, oldDiagnosis))
 
         // Act
         val result = diagnosisService.listRecent()
@@ -103,7 +104,7 @@ class DiagnosisServiceTest {
             )
         }
 
-        `when`(diagnosisRepository.findRecent(5)).thenReturn(diagnoses.take(5))
+        whenever(diagnosisRepository.findRecent(5)).thenReturn(diagnoses.take(5))
 
         // Act
         val result = diagnosisService.listRecent(5)
@@ -117,7 +118,7 @@ class DiagnosisServiceTest {
     @Test
     fun `listRecent returns empty list when no diagnoses exist`() {
         // Arrange
-        `when`(diagnosisRepository.findRecent(50)).thenReturn(emptyList())
+        whenever(diagnosisRepository.findRecent(50)).thenReturn(emptyList())
 
         // Act
         val result = diagnosisService.listRecent()
@@ -151,7 +152,7 @@ class DiagnosisServiceTest {
             verification = "VERIFIED",
             createdAt = baseTime
         )
-        `when`(diagnosisRepository.findById(testId)).thenReturn(entity)
+        whenever(diagnosisRepository.findById(testId)).thenReturn(entity)
 
         // Act
         val result = diagnosisService.getById(DiagnosisId(testId))
@@ -169,7 +170,7 @@ class DiagnosisServiceTest {
     fun `getById returns Failure NotFound for non-existent diagnosis`() {
         // Arrange
         val testId = 999L
-        `when`(diagnosisRepository.findById(testId)).thenReturn(null)
+        whenever(diagnosisRepository.findById(testId)).thenReturn(null)
 
         // Act
         val result = diagnosisService.getById(DiagnosisId(testId))
@@ -205,7 +206,7 @@ class DiagnosisServiceTest {
             verification = "UNVERIFIED",
             createdAt = baseTime
         )
-        `when`(diagnosisRepository.findById(testId)).thenReturn(entity)
+        whenever(diagnosisRepository.findById(testId)).thenReturn(entity)
 
         // Act
         val result = diagnosisService.getById(DiagnosisId(testId))
@@ -244,7 +245,7 @@ class DiagnosisServiceTest {
             verification = "UNVERIFIED",
             createdAt = baseTime
         )
-        `when`(diagnosisRepository.findById(testId)).thenReturn(entity)
+        whenever(diagnosisRepository.findById(testId)).thenReturn(entity)
 
         // Act
         val result = diagnosisService.getById(DiagnosisId(testId))
@@ -280,7 +281,7 @@ class DiagnosisServiceTest {
             verification = "UNVERIFIED",
             createdAt = baseTime
         )
-        `when`(diagnosisRepository.findById(testId)).thenReturn(entity)
+        whenever(diagnosisRepository.findById(testId)).thenReturn(entity)
 
         // Act
         val result = diagnosisService.getById(DiagnosisId(testId))
@@ -302,7 +303,7 @@ class DiagnosisServiceTest {
     fun `Either Left pattern matching works correctly`() {
         // Arrange
         val testId = 222L
-        `when`(diagnosisRepository.findById(testId)).thenReturn(null)
+        whenever(diagnosisRepository.findById(testId)).thenReturn(null)
 
         // Act
         val result = diagnosisService.getById(DiagnosisId(testId))
@@ -316,5 +317,183 @@ class DiagnosisServiceTest {
                 assertTrue(result.value is DiagnosisError.NotFound)
             }
         }
+    }
+
+    @Test
+    fun `updateVerification updates status successfully`() {
+        // Arrange
+        val testId = 123L
+        val baseTime = Instant.now()
+        val incidentEntity = IncidentEntity(
+            id = 1L,
+            source = "monitoring",
+            title = "Test incident",
+            description = "Description",
+            severity = "HIGH",
+            status = "OPEN",
+            createdAt = baseTime,
+            updatedAt = baseTime
+        )
+
+        val entity = DiagnosisEntity(
+            id = testId,
+            incident = incidentEntity,
+            suggestedRootCause = "Test root cause",
+            remediationSteps = "Step 1",
+            confidence = "MEDIUM",
+            verification = "UNVERIFIED",
+            createdAt = baseTime
+        )
+        whenever(diagnosisRepository.findById(testId)).thenReturn(entity)
+
+        // Act
+        val result = diagnosisService.updateVerification(DiagnosisId(testId), DiagnosisVerification.VerifiedByHuman)
+
+        // Assert
+        assertTrue(result is Either.Right)
+        val diagnosis = (result as Either.Right).value
+        assertTrue(diagnosis.verification is DiagnosisVerification.VerifiedByHuman)
+        assertEquals("VERIFIED", entity.verification)
+    }
+
+    @Test
+    fun `updateVerification returns Failure NotFound for non-existent diagnosis`() {
+        // Arrange
+        val testId = 999L
+        whenever(diagnosisRepository.findById(testId)).thenReturn(null)
+
+        // Act
+        val result = diagnosisService.updateVerification(DiagnosisId(testId), DiagnosisVerification.VerifiedByHuman)
+
+        // Assert
+        assertTrue(result is Either.Left)
+        val error = (result as Either.Left).value
+        assertTrue(error is DiagnosisError.NotFound)
+    }
+
+    @Test
+    fun `verify updates verification status, verifiedAt, and verifiedBy`() {
+        // Arrange
+        val testId = 123L
+        val baseTime = Instant.now()
+        val incidentEntity = IncidentEntity(
+            id = 1L,
+            source = "monitoring",
+            title = "Test incident",
+            description = "Description",
+            severity = "HIGH",
+            status = "OPEN",
+            createdAt = baseTime,
+            updatedAt = baseTime
+        )
+        val entity = DiagnosisEntity(
+            id = testId,
+            incident = incidentEntity,
+            suggestedRootCause = "Root cause",
+            remediationSteps = "Step 1",
+            confidence = "MEDIUM",
+            verification = "UNVERIFIED",
+            createdAt = baseTime
+        )
+        whenever(diagnosisRepository.findById(testId)).thenReturn(entity)
+        whenever(embeddingService.embedVerifiedDiagnosis(any())).thenReturn(Either.Right(1))
+
+        // Act
+        val result = diagnosisService.verify(DiagnosisId(testId), "testuser")
+
+        // Assert
+        assertTrue(result is Either.Right)
+        val diagnosis = (result as Either.Right).value
+        assertEquals("VERIFIED", entity.verification)
+        assertNotNull(entity.verifiedAt)
+        assertEquals("testuser", entity.verifiedBy)
+        assertTrue(diagnosis.verification is DiagnosisVerification.VerifiedByHuman)
+    }
+
+    @Test
+    fun `verify calls embeddingService with correct diagnosis ID`() {
+        // Arrange
+        val testId = 456L
+        val baseTime = Instant.now()
+        val incidentEntity = IncidentEntity(
+            id = 1L,
+            source = "monitoring",
+            title = "Test incident",
+            description = "Description",
+            severity = "HIGH",
+            status = "OPEN",
+            createdAt = baseTime,
+            updatedAt = baseTime
+        )
+        val entity = DiagnosisEntity(
+            id = testId,
+            incident = incidentEntity,
+            suggestedRootCause = "Root cause",
+            remediationSteps = "Step 1",
+            confidence = "MEDIUM",
+            verification = "UNVERIFIED",
+            createdAt = baseTime
+        )
+        whenever(diagnosisRepository.findById(testId)).thenReturn(entity)
+        whenever(embeddingService.embedVerifiedDiagnosis(any())).thenReturn(Either.Right(1))
+
+        // Act
+        diagnosisService.verify(DiagnosisId(testId), "user123")
+
+        // Assert
+        verify(embeddingService).embedVerifiedDiagnosis(eq(DiagnosisId(testId)))
+    }
+
+    @Test
+    fun `verify returns NotFound for non-existent diagnosis`() {
+        // Arrange
+        val testId = 999L
+        whenever(diagnosisRepository.findById(testId)).thenReturn(null)
+
+        // Act
+        val result = diagnosisService.verify(DiagnosisId(testId), "testuser")
+
+        // Assert
+        assertTrue(result is Either.Left)
+        val error = (result as Either.Left).value
+        assertTrue(error is DiagnosisError.NotFound)
+    }
+
+    @Test
+    fun `verify succeeds even when embedding service fails`() {
+        // Arrange
+        val testId = 789L
+        val baseTime = Instant.now()
+        val incidentEntity = IncidentEntity(
+            id = 1L,
+            source = "monitoring",
+            title = "Test incident",
+            description = "Description",
+            severity = "HIGH",
+            status = "OPEN",
+            createdAt = baseTime,
+            updatedAt = baseTime
+        )
+        val entity = DiagnosisEntity(
+            id = testId,
+            incident = incidentEntity,
+            suggestedRootCause = "Root cause",
+            remediationSteps = "Step 1",
+            confidence = "MEDIUM",
+            verification = "UNVERIFIED",
+            createdAt = baseTime
+        )
+        whenever(diagnosisRepository.findById(testId)).thenReturn(entity)
+        whenever(embeddingService.embedVerifiedDiagnosis(any())).thenReturn(Either.Left(com.example.incidentanalyst.rag.EmbeddingError.EmbeddingFailed))
+
+        // Act
+        val result = diagnosisService.verify(DiagnosisId(testId), "testuser")
+
+        // Assert - verification should succeed despite embedding failure
+        assertTrue(result is Either.Right)
+        val diagnosis = (result as Either.Right).value
+        assertEquals("VERIFIED", entity.verification)
+        assertNotNull(entity.verifiedAt)
+        assertEquals("testuser", entity.verifiedBy)
     }
 }

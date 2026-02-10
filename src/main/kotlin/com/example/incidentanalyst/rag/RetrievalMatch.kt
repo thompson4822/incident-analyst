@@ -6,5 +6,6 @@ import com.example.incidentanalyst.runbook.RunbookFragmentId
 data class RetrievalMatch<T>(
     val id: T,
     val score: EmbeddingScore,
-    val snippet: String?
+    val snippet: String?,
+    val sourceType: SourceType? = null
 )

@@ -19,11 +19,12 @@ class IncidentEmbeddingRepository : PanacheRepository<IncidentEmbeddingEntity> {
         }
 
         val sql = """
-            SELECT 
+            SELECT
                 ie.id,
                 ie.incident_id,
                 ie.text,
-                1 - (ie.embedding <=> :embedding) AS similarity
+                1 - (ie.embedding <=> :embedding) AS similarity,
+                ie.source_type
             FROM incident_embeddings ie
             WHERE 1 - (ie.embedding <=> :embedding) >= :minScore
             ORDER BY similarity DESC
@@ -44,7 +45,8 @@ class IncidentEmbeddingRepository : PanacheRepository<IncidentEmbeddingEntity> {
                 id = (row[0] as Number).toLong(),
                 incidentId = (row[1] as Number).toLong(),
                 text = row[2] as String?,
-                similarity = (row[3] as Number).toDouble()
+                similarity = (row[3] as Number).toDouble(),
+                sourceType = row[4] as String? ?: "RAW_INCIDENT"
             )
         }
     }
@@ -64,7 +66,8 @@ class IncidentEmbeddingRepository : PanacheRepository<IncidentEmbeddingEntity> {
                     id = requireNotNull(entity.id),
                     incidentId = incidentId,
                     text = entity.text,
-                    similarity = similarity
+                    similarity = similarity,
+                    sourceType = entity.sourceType
                 )
             } else {
                 null

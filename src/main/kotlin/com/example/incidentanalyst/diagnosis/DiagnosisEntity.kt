@@ -33,5 +33,9 @@ open class DiagnosisEntity(
     open var confidence: String = "",
     open var verification: String = "UNVERIFIED",
     @Column(name = "created_at")
-    open var createdAt: Instant = Instant.now()
+    open var createdAt: Instant = Instant.now(),
+    @Column(name = "verified_at")
+    open var verifiedAt: Instant? = null,
+    @Column(name = "verified_by")
+    open var verifiedBy: String? = null
 ) : PanacheEntityBase

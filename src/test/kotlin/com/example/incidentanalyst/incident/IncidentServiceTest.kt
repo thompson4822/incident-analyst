@@ -9,8 +9,7 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.reset
-import org.mockito.Mockito.`when`
+import org.mockito.kotlin.*
 import java.time.Instant
 
 @QuarkusTest
@@ -31,7 +30,7 @@ class IncidentServiceTest {
     fun `getById returns Failure NotFound for non-existent incident`() {
         // Arrange
         val testId = 999L
-        `when`(incidentRepository.findById(testId)).thenReturn(null)
+        whenever(incidentRepository.findById(testId)).thenReturn(null)
 
         // Act
         val result = incidentService.getById(IncidentId(testId))
@@ -58,7 +57,7 @@ class IncidentServiceTest {
             createdAt = testTimestamp,
             updatedAt = testTimestamp
         )
-        `when`(incidentRepository.findById(testId)).thenReturn(entity)
+        whenever(incidentRepository.findById(testId)).thenReturn(entity)
 
         // Act
         val result = incidentService.getById(IncidentId(testId))
@@ -86,7 +85,7 @@ class IncidentServiceTest {
             createdAt = testTimestamp,
             updatedAt = testTimestamp
         )
-        `when`(incidentRepository.findById(testId)).thenReturn(entity)
+        whenever(incidentRepository.findById(testId)).thenReturn(entity)
 
         // Act
         val result = incidentService.getById(IncidentId(testId))
@@ -112,7 +111,7 @@ class IncidentServiceTest {
             createdAt = testTimestamp,
             updatedAt = testTimestamp
         )
-        `when`(incidentRepository.findById(testId)).thenReturn(entity)
+        whenever(incidentRepository.findById(testId)).thenReturn(entity)
 
         // Act
         val result = incidentService.getById(IncidentId(testId))
@@ -138,7 +137,7 @@ class IncidentServiceTest {
             createdAt = testTimestamp,
             updatedAt = testTimestamp
         )
-        `when`(incidentRepository.findById(testId)).thenReturn(entity)
+        whenever(incidentRepository.findById(testId)).thenReturn(entity)
 
         // Act
         val result = incidentService.getById(IncidentId(testId))
@@ -161,7 +160,7 @@ class IncidentServiceTest {
     fun `Either Left pattern matching works correctly`() {
         // Arrange
         val testId = 222L
-        `when`(incidentRepository.findById(testId)).thenReturn(null)
+        whenever(incidentRepository.findById(testId)).thenReturn(null)
 
         // Act
         val result = incidentService.getById(IncidentId(testId))

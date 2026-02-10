@@ -1,20 +1,16 @@
 package com.example.incidentanalyst.diagnosis
 
 import com.example.incidentanalyst.common.Either
+import com.example.incidentanalyst.incident.IncidentId
 import io.quarkus.test.InjectMock
 import io.quarkus.test.junit.QuarkusTest
 import io.restassured.RestAssured.given
 import io.restassured.http.ContentType
-import jakarta.inject.Inject
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.CoreMatchers.notNullValue
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.reset
-import org.mockito.Mockito.`when`
-import com.example.incidentanalyst.incident.IncidentEntity
-import com.example.incidentanalyst.incident.IncidentId
+import org.mockito.kotlin.*
 import java.time.Instant
 
 @QuarkusTest
@@ -22,9 +18,6 @@ class DiagnosisResourceTest {
 
     @InjectMock
     lateinit var diagnosisServiceMock: DiagnosisService
-
-    private val diagnosisService: DiagnosisService
-        get() = diagnosisServiceMock
 
     @BeforeEach
     fun setup() {
@@ -53,7 +46,7 @@ class DiagnosisResourceTest {
             verification = DiagnosisVerification.Unverified,
             createdAt = baseTime.minusSeconds(3600)
         )
-        `when`(diagnosisServiceMock.listRecent()).thenReturn(listOf(diagnosis1, diagnosis2))
+        whenever(diagnosisServiceMock.listRecent()).thenReturn(listOf(diagnosis1, diagnosis2))
 
         // Act & Assert
         given()
@@ -72,7 +65,7 @@ class DiagnosisResourceTest {
     @Test
     fun `GET returns empty list when no diagnoses exist`() {
         // Arrange
-        `when`(diagnosisServiceMock.listRecent()).thenReturn(emptyList())
+        whenever(diagnosisServiceMock.listRecent()).thenReturn(emptyList())
 
         // Act & Assert
         given()
@@ -98,7 +91,7 @@ class DiagnosisResourceTest {
             verification = DiagnosisVerification.VerifiedByHuman,
             createdAt = baseTime
         )
-        `when`(diagnosisServiceMock.getById(DiagnosisId(testId)))
+        whenever(diagnosisServiceMock.getById(DiagnosisId(testId)))
             .thenReturn(Either.Right(diagnosis))
 
         // Act & Assert
@@ -123,7 +116,7 @@ class DiagnosisResourceTest {
     fun `GET by id returns 404 for non-existent diagnosis`() {
         // Arrange
         val testId = 999L
-        `when`(diagnosisServiceMock.getById(DiagnosisId(testId)))
+        whenever(diagnosisServiceMock.getById(DiagnosisId(testId)))
             .thenReturn(Either.Left(DiagnosisError.NotFound))
 
         // Act & Assert
@@ -185,7 +178,7 @@ class DiagnosisResourceTest {
             verification = DiagnosisVerification.Unverified,
             createdAt = baseTime
         )
-        `when`(diagnosisServiceMock.getById(DiagnosisId(testId)))
+        whenever(diagnosisServiceMock.getById(DiagnosisId(testId)))
             .thenReturn(Either.Right(diagnosis))
 
         // Act & Assert
@@ -214,7 +207,7 @@ class DiagnosisResourceTest {
                 verification = DiagnosisVerification.Unverified,
                 createdAt = baseTime
             )
-            `when`(diagnosisServiceMock.getById(DiagnosisId(testId)))
+            whenever(diagnosisServiceMock.getById(DiagnosisId(testId)))
                 .thenReturn(Either.Right(diagnosis))
 
             // Act & Assert
@@ -242,7 +235,7 @@ class DiagnosisResourceTest {
             verification = DiagnosisVerification.VerifiedByHuman,
             createdAt = baseTime
         )
-        `when`(diagnosisServiceMock.updateVerification(DiagnosisId(testId), DiagnosisVerification.VerifiedByHuman))
+        whenever(diagnosisServiceMock.updateVerification(DiagnosisId(testId), DiagnosisVerification.VerifiedByHuman))
             .thenReturn(Either.Right(diagnosis))
 
         // Act & Assert
@@ -261,7 +254,7 @@ class DiagnosisResourceTest {
     fun `PUT verification endpoint returns 404 for non-existent diagnosis`() {
         // Arrange
         val testId = 999L
-        `when`(diagnosisServiceMock.updateVerification(DiagnosisId(testId), DiagnosisVerification.VerifiedByHuman))
+        whenever(diagnosisServiceMock.updateVerification(DiagnosisId(testId), DiagnosisVerification.VerifiedByHuman))
             .thenReturn(Either.Left(DiagnosisError.NotFound))
 
         // Act & Assert
@@ -301,7 +294,7 @@ class DiagnosisResourceTest {
             verification = DiagnosisVerification.VerifiedByHuman,
             createdAt = baseTime
         )
-        `when`(diagnosisServiceMock.updateVerification(DiagnosisId(testId), DiagnosisVerification.VerifiedByHuman))
+        whenever(diagnosisServiceMock.updateVerification(DiagnosisId(testId), DiagnosisVerification.VerifiedByHuman))
             .thenReturn(Either.Right(diagnosis))
 
         // Act & Assert
@@ -329,7 +322,7 @@ class DiagnosisResourceTest {
             verification = DiagnosisVerification.Unverified,
             createdAt = baseTime
         )
-        `when`(diagnosisServiceMock.updateVerification(DiagnosisId(testId), DiagnosisVerification.Unverified))
+        whenever(diagnosisServiceMock.updateVerification(DiagnosisId(testId), DiagnosisVerification.Unverified))
             .thenReturn(Either.Right(diagnosis))
 
         // Act & Assert
@@ -347,7 +340,7 @@ class DiagnosisResourceTest {
     fun `PUT verification endpoint returns 500 on UpdateFailed`() {
         // Arrange
         val testId = 555L
-        `when`(diagnosisServiceMock.updateVerification(DiagnosisId(testId), DiagnosisVerification.VerifiedByHuman))
+        whenever(diagnosisServiceMock.updateVerification(DiagnosisId(testId), DiagnosisVerification.VerifiedByHuman))
             .thenReturn(Either.Left(DiagnosisError.UpdateFailed))
 
         // Act & Assert
@@ -387,7 +380,7 @@ class DiagnosisResourceTest {
             verification = DiagnosisVerification.VerifiedByHuman,
             createdAt = baseTime
         )
-        `when`(diagnosisServiceMock.getById(DiagnosisId(testId)))
+        whenever(diagnosisServiceMock.getById(DiagnosisId(testId)))
             .thenReturn(Either.Right(diagnosis))
 
         // Act & Assert
@@ -414,7 +407,7 @@ class DiagnosisResourceTest {
             verification = DiagnosisVerification.VerifiedByHuman,
             createdAt = baseTime
         )
-        `when`(diagnosisServiceMock.getById(DiagnosisId(testId)))
+        whenever(diagnosisServiceMock.getById(DiagnosisId(testId)))
             .thenReturn(Either.Right(diagnosis))
 
         // Act & Assert
@@ -441,7 +434,7 @@ class DiagnosisResourceTest {
             verification = DiagnosisVerification.VerifiedByHuman,
             createdAt = baseTime
         )
-        `when`(diagnosisServiceMock.getById(DiagnosisId(testId)))
+        whenever(diagnosisServiceMock.getById(DiagnosisId(testId)))
             .thenReturn(Either.Right(diagnosis))
 
         // Act & Assert
@@ -471,7 +464,7 @@ class DiagnosisResourceTest {
             verification = DiagnosisVerification.VerifiedByHuman,
             createdAt = baseTime
         )
-        `when`(diagnosisServiceMock.getById(DiagnosisId(testId)))
+        whenever(diagnosisServiceMock.getById(DiagnosisId(testId)))
             .thenReturn(Either.Right(diagnosis))
 
         // Act & Assert
@@ -498,7 +491,7 @@ class DiagnosisResourceTest {
             verification = DiagnosisVerification.Unverified,
             createdAt = baseTime
         )
-        `when`(diagnosisServiceMock.getById(DiagnosisId(testId)))
+        whenever(diagnosisServiceMock.getById(DiagnosisId(testId)))
             .thenReturn(Either.Right(diagnosis))
 
         // Act & Assert
@@ -509,5 +502,176 @@ class DiagnosisResourceTest {
             .then()
             .statusCode(200)
             .body("verified", equalTo(false))
+    }
+
+    @Test
+    fun `POST verify endpoint returns 200 with updated diagnosis`() {
+        // Arrange
+        val testId = 123L
+        val baseTime = Instant.now()
+        val verifiedAt = Instant.now()
+        val diagnosis = Diagnosis(
+            id = DiagnosisId(testId),
+            incidentId = IncidentId(10L),
+            rootCause = "Root cause",
+            steps = listOf("Step 1"),
+            confidence = Confidence.HIGH,
+            verification = DiagnosisVerification.VerifiedByHuman,
+            createdAt = baseTime,
+            verifiedAt = verifiedAt,
+            verifiedBy = "testuser"
+        )
+        whenever(diagnosisServiceMock.verify(DiagnosisId(testId), "testuser"))
+            .thenReturn(Either.Right(diagnosis))
+
+        // Act & Assert
+        given()
+            .contentType(ContentType.JSON)
+            .body("""{"verifiedBy": "testuser"}""")
+            .`when`()
+            .post("/diagnoses/$testId/verify")
+            .then()
+            .statusCode(200)
+            .body("id", equalTo(testId.toInt()))
+            .body("verified", equalTo(true))
+            .body("verifiedBy", equalTo("testuser"))
+    }
+
+    @Test
+    fun `POST verify endpoint returns 404 for non-existent diagnosis`() {
+        // Arrange
+        val testId = 999L
+        whenever(diagnosisServiceMock.verify(DiagnosisId(testId), "testuser"))
+            .thenReturn(Either.Left(DiagnosisError.NotFound))
+
+        // Act & Assert
+        given()
+            .contentType(ContentType.JSON)
+            .body("""{"verifiedBy": "testuser"}""")
+            .`when`()
+            .post("/diagnoses/$testId/verify")
+            .then()
+            .statusCode(404)
+    }
+
+    @Test
+    fun `POST verify endpoint returns 400 for invalid negative ID`() {
+        // Act & Assert
+        given()
+            .contentType(ContentType.JSON)
+            .body("""{"verifiedBy": "testuser"}""")
+            .`when`()
+            .post("/diagnoses/-1/verify")
+            .then()
+            .statusCode(400)
+            .body("error", notNullValue())
+    }
+
+    @Test
+    fun `POST verify endpoint returns 400 for invalid zero ID`() {
+        // Act & Assert
+        given()
+            .contentType(ContentType.JSON)
+            .body("""{"verifiedBy": "testuser"}""")
+            .`when`()
+            .post("/diagnoses/0/verify")
+            .then()
+            .statusCode(400)
+            .body("error", notNullValue())
+    }
+
+    @Test
+    fun `POST verify endpoint returns 400 for blank verifiedBy`() {
+        // Arrange
+        val testId = 123L
+
+        // Act & Assert
+        given()
+            .contentType(ContentType.JSON)
+            .body("""{"verifiedBy": "   "}""")
+            .`when`()
+            .post("/diagnoses/$testId/verify")
+            .then()
+            .statusCode(400)
+            .body("error", equalTo("verifiedBy is required"))
+    }
+
+    @Test
+    fun `POST verify endpoint returns 400 for empty verifiedBy`() {
+        // Arrange
+        val testId = 123L
+
+        // Act & Assert
+        given()
+            .contentType(ContentType.JSON)
+            .body("""{"verifiedBy": ""}""")
+            .`when`()
+            .post("/diagnoses/$testId/verify")
+            .then()
+            .statusCode(400)
+            .body("error", equalTo("verifiedBy is required"))
+    }
+
+    @Test
+    fun `POST verify endpoint includes verifiedAt and verifiedBy in response`() {
+        // Arrange
+        val testId = 456L
+        val baseTime = Instant.now()
+        val verifiedAt = Instant.now()
+        val diagnosis = Diagnosis(
+            id = DiagnosisId(testId),
+            incidentId = IncidentId(10L),
+            rootCause = "Root cause",
+            steps = listOf("Step 1"),
+            confidence = Confidence.HIGH,
+            verification = DiagnosisVerification.VerifiedByHuman,
+            createdAt = baseTime,
+            verifiedAt = verifiedAt,
+            verifiedBy = "admin"
+        )
+        whenever(diagnosisServiceMock.verify(DiagnosisId(testId), "admin"))
+            .thenReturn(Either.Right(diagnosis))
+
+        // Act & Assert
+        given()
+            .contentType(ContentType.JSON)
+            .body("""{"verifiedBy": "admin"}""")
+            .`when`()
+            .post("/diagnoses/$testId/verify")
+            .then()
+            .statusCode(200)
+            .body("verified", equalTo(true))
+            .body("verifiedBy", equalTo("admin"))
+            .body("verifiedAt", notNullValue())
+    }
+
+    @Test
+    fun `POST verify endpoint returns appropriate error message for negative ID`() {
+        // Act & Assert
+        given()
+            .contentType(ContentType.JSON)
+            .body("""{"verifiedBy": "testuser"}""")
+            .`when`()
+            .post("/diagnoses/-5/verify")
+            .then()
+            .statusCode(400)
+            .body("error", equalTo("Diagnosis ID must be a positive number"))
+    }
+
+    @Test
+    fun `POST verify endpoint returns 500 on service error`() {
+        // Arrange
+        val testId = 555L
+        whenever(diagnosisServiceMock.verify(DiagnosisId(testId), "testuser"))
+            .thenReturn(Either.Left(DiagnosisError.UpdateFailed))
+
+        // Act & Assert
+        given()
+            .contentType(ContentType.JSON)
+            .body("""{"verifiedBy": "testuser"}""")
+            .`when`()
+            .post("/diagnoses/$testId/verify")
+            .then()
+            .statusCode(500)
     }
 }

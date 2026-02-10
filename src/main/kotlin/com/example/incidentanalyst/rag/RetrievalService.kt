@@ -68,7 +68,8 @@ class RetrievalService @Inject constructor(
                 RetrievalMatch(
                     id = IncidentId(it.incidentId),
                     score = EmbeddingScore(it.similarity),
-                    snippet = it.text?.take(200)
+                    snippet = it.text?.take(200),
+                    sourceType = try { SourceType.valueOf(it.sourceType) } catch (e: Exception) { SourceType.RAW_INCIDENT }
                 )
             },
             similarRunbooks = similarRunbooks.map {
@@ -128,7 +129,8 @@ class RetrievalService @Inject constructor(
                 RetrievalMatch(
                     id = IncidentId(it.incidentId),
                     score = EmbeddingScore(it.similarity),
-                    snippet = it.text?.take(200)
+                    snippet = it.text?.take(200),
+                    sourceType = try { SourceType.valueOf(it.sourceType) } catch (e: Exception) { SourceType.RAW_INCIDENT }
                 )
             },
             similarRunbooks = similarRunbooks.map {

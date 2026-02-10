@@ -12,9 +12,7 @@ import org.hamcrest.CoreMatchers.nullValue
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.anyLong
-import org.mockito.Mockito.reset
-import org.mockito.Mockito.`when`
+import org.mockito.kotlin.*
 import java.time.Instant
 
 @QuarkusTest
@@ -43,7 +41,7 @@ class IncidentResourceTest {
             createdAt = testTimestamp,
             updatedAt = testTimestamp
         )
-        `when`(incidentService.getById(IncidentId(testId)))
+        whenever(incidentService.getById(IncidentId(testId)))
             .thenReturn(Either.Right(incident))
 
         // Act & Assert
@@ -66,7 +64,7 @@ class IncidentResourceTest {
     fun `GET by id returns 404 for non-existent incident`() {
         // Arrange
         val testId = 999L
-        `when`(incidentService.getById(IncidentId(testId)))
+        whenever(incidentService.getById(IncidentId(testId)))
             .thenReturn(Either.Left(IncidentError.NotFound))
 
         // Act & Assert
@@ -134,7 +132,7 @@ class IncidentResourceTest {
             createdAt = testTimestamp,
             updatedAt = testTimestamp
         )
-        `when`(incidentService.getById(IncidentId(testId)))
+        whenever(incidentService.getById(IncidentId(testId)))
             .thenReturn(Either.Right(incident))
 
         // Act & Assert
@@ -166,7 +164,7 @@ class IncidentResourceTest {
             createdAt = testTimestamp,
             updatedAt = testTimestamp
         )
-        `when`(incidentService.getById(IncidentId(testId)))
+        whenever(incidentService.getById(IncidentId(testId)))
             .thenReturn(Either.Right(incident))
 
         // Act & Assert
@@ -195,7 +193,7 @@ class IncidentResourceTest {
             createdAt = testTimestamp,
             updatedAt = testTimestamp
         )
-        `when`(incidentService.getById(IncidentId(testId)))
+        whenever(incidentService.getById(IncidentId(testId)))
             .thenReturn(Either.Right(incident))
 
         // Act & Assert
@@ -224,7 +222,7 @@ class IncidentResourceTest {
             createdAt = testTimestamp,
             updatedAt = testTimestamp
         )
-        `when`(incidentService.getById(IncidentId(testId)))
+        whenever(incidentService.getById(IncidentId(testId)))
             .thenReturn(Either.Right(incident))
 
         // Act & Assert
@@ -259,7 +257,7 @@ class IncidentResourceTest {
             createdAt = testTimestamp,
             updatedAt = testTimestamp
         )
-        `when`(incidentService.getById(IncidentId(testId)))
+        whenever(incidentService.getById(IncidentId(testId)))
             .thenReturn(Either.Right(incident))
 
         // Act & Assert
@@ -290,7 +288,7 @@ class IncidentResourceTest {
                 createdAt = testTimestamp,
                 updatedAt = testTimestamp
             )
-            `when`(incidentService.getById(IncidentId(testId)))
+            whenever(incidentService.getById(IncidentId(testId)))
                 .thenReturn(Either.Right(incident))
 
             // Act & Assert
@@ -321,7 +319,7 @@ class IncidentResourceTest {
             createdAt = testTimestamp,
             updatedAt = testTimestamp
         )
-        `when`(incidentService.getById(IncidentId(testId)))
+        whenever(incidentService.getById(IncidentId(testId)))
             .thenReturn(Either.Right(incident))
 
         // Act & Assert

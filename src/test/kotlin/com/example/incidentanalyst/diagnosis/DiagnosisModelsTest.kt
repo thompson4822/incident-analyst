@@ -2,7 +2,6 @@ package com.example.incidentanalyst.diagnosis
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Test
 import com.example.incidentanalyst.incident.IncidentEntity
 import com.example.incidentanalyst.incident.IncidentId
@@ -136,77 +135,6 @@ class DiagnosisModelsTest {
         // Assert
         assertTrue(llmResponseInvalid is DiagnosisError.LlmResponseInvalid)
         assertEquals(reason, (llmResponseInvalid as DiagnosisError.LlmResponseInvalid).reason)
-    }
-
-    @Test
-    fun `DiagnosisResult Success wraps diagnosis`() {
-        // Arrange
-        val baseTime = Instant.now()
-        val diagnosis = Diagnosis(
-            id = DiagnosisId(1L),
-            incidentId = IncidentId(10L),
-            rootCause = "Root cause",
-            steps = listOf("Step 1"),
-            confidence = Confidence.HIGH,
-            verification = DiagnosisVerification.VerifiedByHuman,
-            createdAt = baseTime
-        )
-        val successResult: DiagnosisResult = DiagnosisResult.Success(diagnosis)
-
-        // Act & Assert
-        assertTrue(successResult is DiagnosisResult.Success)
-        assertEquals(diagnosis, (successResult as DiagnosisResult.Success).diagnosis)
-    }
-
-    @Test
-    fun `DiagnosisResult Failure wraps error`() {
-        // Arrange
-        val failureResult: DiagnosisResult = DiagnosisResult.Failure(DiagnosisError.NotFound)
-
-        // Act & Assert
-        assertTrue(failureResult is DiagnosisResult.Failure)
-        assertTrue((failureResult as DiagnosisResult.Failure).error is DiagnosisError.NotFound)
-    }
-
-    @Test
-    fun `pattern matching on DiagnosisResult works correctly`() {
-        // Arrange
-        val baseTime = Instant.now()
-        val diagnosis = Diagnosis(
-            id = DiagnosisId(1L),
-            incidentId = IncidentId(10L),
-            rootCause = "Root cause",
-            steps = listOf("Step 1"),
-            confidence = Confidence.HIGH,
-            verification = DiagnosisVerification.VerifiedByHuman,
-            createdAt = baseTime
-        )
-
-        // Act & Assert - Success case
-        val successResult: DiagnosisResult = DiagnosisResult.Success(diagnosis)
-        var successHandled = false
-        var failureHandled = false
-
-        when (successResult) {
-            is DiagnosisResult.Success -> successHandled = true
-            is DiagnosisResult.Failure -> failureHandled = true
-        }
-
-        assertTrue(successHandled)
-        assertFalse(failureHandled)
-
-        // Act & Assert - Failure case
-        val failureResult: DiagnosisResult = DiagnosisResult.Failure(DiagnosisError.NotFound)
-        successHandled = false
-        failureHandled = false
-
-        when (failureResult) {
-            is DiagnosisResult.Success -> successHandled = true
-            is DiagnosisResult.Failure -> failureHandled = true
-        }
-
-        assertFalse(successHandled)
-        assertTrue(failureHandled)
     }
 
     @Test
@@ -531,9 +459,5 @@ class DiagnosisModelsTest {
 
         // Assert
         assertEquals(createdTime, entity.createdAt)
-    }
-
-    private fun assertFalse(condition: Boolean) {
-        assertEquals(false, condition)
     }
 }

@@ -1,7 +1,6 @@
 package com.example.incidentanalyst.incident
 
 import com.example.incidentanalyst.agent.IncidentDiagnosisService
-import com.example.incidentanalyst.diagnosis.DiagnosisResult
 import com.example.incidentanalyst.diagnosis.DiagnosisService
 import com.example.incidentanalyst.home.DiagnosisStepViewModel
 import com.example.incidentanalyst.web.toDaisyColor

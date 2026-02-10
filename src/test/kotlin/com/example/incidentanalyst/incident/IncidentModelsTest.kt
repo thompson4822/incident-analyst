@@ -2,7 +2,6 @@ package com.example.incidentanalyst.incident
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Test
 import java.time.Instant
 
@@ -407,69 +406,6 @@ class IncidentModelsTest {
     }
 
     @Test
-    fun `IncidentResult ADT has Success and Failure variants`() {
-        // Arrange
-        val incident = Incident(
-            id = IncidentId(1L),
-            source = "test",
-            title = "Test",
-            description = "Description",
-            severity = Severity.HIGH,
-            status = IncidentStatus.Open,
-            createdAt = Instant.now(),
-            updatedAt = Instant.now()
-        )
-        val successResult: IncidentResult = IncidentResult.Success(incident)
-        val failureResult: IncidentResult = IncidentResult.Failure(IncidentError.NotFound)
-
-        // Assert
-        assertTrue(successResult is IncidentResult.Success)
-        assertEquals(incident, (successResult as IncidentResult.Success).incident)
-        assertTrue(failureResult is IncidentResult.Failure)
-        assertTrue((failureResult as IncidentResult.Failure).error is IncidentError.NotFound)
-    }
-
-    @Test
-    fun `pattern matching on IncidentResult works correctly`() {
-        // Arrange
-        val incident = Incident(
-            id = IncidentId(1L),
-            source = "test",
-            title = "Test",
-            description = "Description",
-            severity = Severity.HIGH,
-            status = IncidentStatus.Open,
-            createdAt = Instant.now(),
-            updatedAt = Instant.now()
-        )
-
-        // Act & Assert
-        val successResult: IncidentResult = IncidentResult.Success(incident)
-        var successHandled = false
-        var failureHandled = false
-
-        when (successResult) {
-            is IncidentResult.Success -> successHandled = true
-            is IncidentResult.Failure -> failureHandled = true
-        }
-
-        assertTrue(successHandled)
-        assertFalse(failureHandled)
-
-        val failureResult: IncidentResult = IncidentResult.Failure(IncidentError.NotFound)
-        successHandled = false
-        failureHandled = false
-
-        when (failureResult) {
-            is IncidentResult.Success -> successHandled = true
-            is IncidentResult.Failure -> failureHandled = true
-        }
-
-        assertFalse(successHandled)
-        assertTrue(failureHandled)
-    }
-
-    @Test
     fun `toEntity maps Open status to OPEN`() {
         // Arrange
         val incident = Incident(
@@ -642,9 +578,5 @@ class IncidentModelsTest {
         assertEquals("OPEN", entity.status)
         assertEquals(createdTime, entity.createdAt)
         assertEquals(updatedTime, entity.updatedAt)
-    }
-
-    private fun assertFalse(condition: Boolean) {
-        assertEquals(false, condition)
     }
 }

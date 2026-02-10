@@ -1,21 +1,19 @@
 package com.example.incidentanalyst.training
 
-import org.junit.jupiter.api.Disabled
-
 import com.example.incidentanalyst.incident.Incident
-import com.example.incidentanalyst.incident.IncidentService
 import com.example.incidentanalyst.incident.IncidentId
 import com.example.incidentanalyst.incident.IncidentStatus
+import com.example.incidentanalyst.incident.IncidentService
 import com.example.incidentanalyst.incident.Severity
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.quarkus.test.InjectMock
 import io.quarkus.test.junit.QuarkusTest
 import io.restassured.RestAssured
-import io.restassured.config.ObjectMapperConfig
 import io.restassured.http.ContentType
 import jakarta.inject.Inject
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.`when`
+import org.mockito.kotlin.*
 import java.time.Instant
 
 @QuarkusTest
@@ -41,7 +39,7 @@ class TrainingIncidentResourceTest {
             updatedAt = timestamp
         )
 
-        `when`(incidentService.create(incident)).thenReturn(incident.copy(id = IncidentId(1)))
+        whenever(incidentService.create(any())).thenReturn(incident.copy(id = IncidentId(1)))
 
         val request = TrainingIncidentRequestDto(
             title = "High CPU Usage",
@@ -79,7 +77,7 @@ class TrainingIncidentResourceTest {
             updatedAt = timestamp
         )
 
-        `when`(incidentService.create(incident)).thenReturn(incident.copy(id = IncidentId(2)))
+        whenever(incidentService.create(any())).thenReturn(incident.copy(id = IncidentId(2)))
 
         val request = TrainingIncidentRequestDto(
             title = "Memory Warning",
@@ -115,7 +113,7 @@ class TrainingIncidentResourceTest {
             updatedAt = timestamp
         )
 
-        `when`(incidentService.create(incident)).thenReturn(incident.copy(id = IncidentId(3)))
+        whenever(incidentService.create(any())).thenReturn(incident.copy(id = IncidentId(3)))
 
         val request = TrainingIncidentRequestDto(
             title = "Application Error",

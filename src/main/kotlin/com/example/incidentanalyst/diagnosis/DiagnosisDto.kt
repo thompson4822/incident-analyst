@@ -6,11 +6,17 @@ data class DiagnosisResponseDto(
     val rootCause: String,
     val steps: List<String>,
     val confidence: String,
-    val verified: Boolean
+    val verified: Boolean,
+    val verifiedAt: String? = null,
+    val verifiedBy: String? = null
 )
 
 data class DiagnosisVerificationUpdateRequestDto(
     val verified: Boolean
+)
+
+data class DiagnosisVerifyRequestDto(
+    val verifiedBy: String
 )
 
 // Extension function to convert Diagnosis domain model to DTO
@@ -21,5 +27,7 @@ fun Diagnosis.toResponseDto(): DiagnosisResponseDto =
         rootCause = rootCause,
         steps = steps,
         confidence = confidence.name,
-        verified = verification is DiagnosisVerification.VerifiedByHuman
+        verified = verification is DiagnosisVerification.VerifiedByHuman,
+        verifiedAt = verifiedAt?.toString(),
+        verifiedBy = verifiedBy
     )

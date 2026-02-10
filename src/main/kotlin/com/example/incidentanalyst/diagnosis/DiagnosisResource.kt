@@ -1,6 +1,7 @@
 package com.example.incidentanalyst.diagnosis
 
 import jakarta.ws.rs.GET
+import jakarta.ws.rs.POST
 import jakarta.ws.rs.Path
 import jakarta.ws.rs.Produces
 import jakarta.ws.rs.PathParam
@@ -66,6 +67,40 @@ class DiagnosisResource(
                 when (error) {
                     is DiagnosisError.NotFound -> Response.status(Response.Status.NOT_FOUND).build()
                     is DiagnosisError.UpdateFailed -> Response.serverError().build()
+                    else -> Response.serverError().build()
+                }
+            },
+            ifRight = { diagnosis -> Response.ok(diagnosis.toResponseDto()).build() }
+        )
+    }
+
+    @POST
+    @Path("/{id}/verify")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    fun verify(
+        @PathParam("id") id: Long,
+        request: DiagnosisVerifyRequestDto
+    ): Response {
+        if (id <= 0) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                .type(MediaType.APPLICATION_JSON)
+                .entity(mapOf("error" to "Diagnosis ID must be a positive number"))
+                .build()
+        }
+
+        if (request.verifiedBy.isBlank()) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                .type(MediaType.APPLICATION_JSON)
+                .entity(mapOf("error" to "verifiedBy is required"))
+                .build()
+        }
+
+        val diagnosisId = DiagnosisId(id)
+        return diagnosisService.verify(diagnosisId, request.verifiedBy).fold(
+            ifLeft = { error ->
+                when (error) {
+                    is DiagnosisError.NotFound -> Response.status(Response.Status.NOT_FOUND).build()
                     else -> Response.serverError().build()
                 }
             },
