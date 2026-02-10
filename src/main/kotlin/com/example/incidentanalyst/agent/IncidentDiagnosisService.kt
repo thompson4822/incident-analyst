@@ -18,13 +18,16 @@ import jakarta.enterprise.context.ApplicationScoped
 import jakarta.transaction.Transactional
 import java.time.Instant
 
+import com.example.incidentanalyst.config.ProfileService
+
 @ApplicationScoped
 class IncidentDiagnosisService(
     private val incidentRepository: IncidentRepository,
     private val retrievalService: RetrievalService,
     private val aiService: IncidentAnalystAgent,
     private val diagnosisRepository: DiagnosisRepository,
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
+    private val profileService: ProfileService
 ) {
 
     @Transactional
@@ -39,6 +42,7 @@ class IncidentDiagnosisService(
         }
 
         val incident = entity.toDomain()
+        val profile = profileService.getProfile()
         
         return retrievalService.retrieve(incident)
             .mapLeft { error ->
@@ -54,7 +58,13 @@ class IncidentDiagnosisService(
                 val contextText = buildContextText(context)
 
                 val raw = try {
-                    aiService.proposeDiagnosis(incidentText, contextText)
+                    aiService.proposeDiagnosis(
+                        appName = profile.name,
+                        appStack = profile.stack.joinToString(", "),
+                        appComponents = profile.components.joinToString(", "),
+                        incident = incidentText,
+                        context = contextText
+                    )
                 } catch (e: Exception) {
                     return@flatMap Either.Left(DiagnosisError.LlmUnavailable)
                 }

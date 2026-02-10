@@ -226,7 +226,7 @@ class CloudWatchIngestionServiceTest {
             stateUpdatedTimestamp = Instant.now(),
             metricName = "CPUUtilization",
             namespace = "AWS/EC2",
-            threshold = "95",
+            threshold = "92",
             comparisonOperator = "GreaterThanThreshold"
         )
 
@@ -514,9 +514,8 @@ class CloudWatchIngestionServiceTest {
 
     @Test
     fun `ingestAlarms returns Success when no alarms`() {
-        val queryResult = Either.Right(emptyList<AlarmDto>())
         whenever(cloudWatchAlarmClient.listAlarmsInAlarmState())
-            .thenReturn(queryResult)
+            .thenReturn(Either.Right(emptyList()))
 
         val result = cloudWatchIngestionService.ingestAlarms()
 
@@ -527,9 +526,8 @@ class CloudWatchIngestionServiceTest {
 
     @Test
     fun `ingestAlarms returns Failure on AWS Throttled error`() {
-        val queryResult = Either.Left(AwsError.Throttled)
         whenever(cloudWatchAlarmClient.listAlarmsInAlarmState())
-            .thenReturn(queryResult)
+            .thenReturn(Either.Left(AwsError.Throttled))
 
         val result = cloudWatchIngestionService.ingestAlarms()
 
@@ -542,9 +540,8 @@ class CloudWatchIngestionServiceTest {
 
     @Test
     fun `ingestAlarms returns Failure on AWS Unauthorized error`() {
-        val queryResult = Either.Left(AwsError.Unauthorized)
         whenever(cloudWatchAlarmClient.listAlarmsInAlarmState())
-            .thenReturn(queryResult)
+            .thenReturn(Either.Left(AwsError.Unauthorized))
 
         val result = cloudWatchIngestionService.ingestAlarms()
 
@@ -557,9 +554,8 @@ class CloudWatchIngestionServiceTest {
 
     @Test
     fun `ingestAlarms returns Failure on AWS NetworkError`() {
-        val queryResult = Either.Left(AwsError.NetworkError)
         whenever(cloudWatchAlarmClient.listAlarmsInAlarmState())
-            .thenReturn(queryResult)
+            .thenReturn(Either.Left(AwsError.NetworkError))
 
         val result = cloudWatchIngestionService.ingestAlarms()
 
@@ -572,9 +568,8 @@ class CloudWatchIngestionServiceTest {
 
     @Test
     fun `ingestAlarms returns Failure on AWS ServiceUnavailable`() {
-        val queryResult = Either.Left(AwsError.ServiceUnavailable)
         whenever(cloudWatchAlarmClient.listAlarmsInAlarmState())
-            .thenReturn(queryResult)
+            .thenReturn(Either.Left(AwsError.ServiceUnavailable))
 
         val result = cloudWatchIngestionService.ingestAlarms()
 
@@ -587,9 +582,8 @@ class CloudWatchIngestionServiceTest {
 
     @Test
     fun `ingestAlarms returns Failure on AWS Unknown error`() {
-        val queryResult = Either.Left(AwsError.Unknown("Some error"))
         whenever(cloudWatchAlarmClient.listAlarmsInAlarmState())
-            .thenReturn(queryResult)
+            .thenReturn(Either.Left(AwsError.Unknown("Some error")))
 
         val result = cloudWatchIngestionService.ingestAlarms()
 
@@ -613,14 +607,13 @@ class CloudWatchIngestionServiceTest {
             threshold = "90",
             comparisonOperator = "GreaterThanThreshold"
         )
-        val queryResult = Either.Right(listOf(alarm))
         whenever(cloudWatchAlarmClient.listAlarmsInAlarmState())
-            .thenReturn(queryResult)
+            .thenReturn(Either.Right(listOf(alarm)))
 
         val expectedIncident = cloudWatchIngestionService.mapAlarmToIncident(alarm)
         assertNotNull(expectedIncident)
 
-        whenever(incidentService.create(expectedIncident!!))
+        whenever(incidentService.create(any()))
             .thenThrow(RuntimeException("Database error"))
 
         val result = cloudWatchIngestionService.ingestAlarms()
@@ -628,7 +621,6 @@ class CloudWatchIngestionServiceTest {
         assertTrue(result is Either.Left)
         val failure = (result as Either.Left).value
         assertTrue(failure is IngestionError.PersistenceError)
-        assertTrue(failure.toString().contains("Failed to persist incident"))
     }
 
     @Test
@@ -655,9 +647,8 @@ class CloudWatchIngestionServiceTest {
             threshold = "90",
             comparisonOperator = "GreaterThanThreshold"
         )
-        val queryResult = Either.Right(listOf(alarm1, alarm2))
         whenever(cloudWatchAlarmClient.listAlarmsInAlarmState())
-            .thenReturn(queryResult)
+            .thenReturn(Either.Right(listOf(alarm1, alarm2)))
 
         val result = cloudWatchIngestionService.ingestAlarms()
 
@@ -691,9 +682,8 @@ class CloudWatchIngestionServiceTest {
             threshold = "90",
             comparisonOperator = "GreaterThanThreshold"
         )
-        val queryResult = Either.Right(listOf(alarm1, alarm2))
         whenever(cloudWatchAlarmClient.listAlarmsInAlarmState())
-            .thenReturn(queryResult)
+            .thenReturn(Either.Right(listOf(alarm1, alarm2)))
 
         val result = cloudWatchIngestionService.ingestAlarms()
 

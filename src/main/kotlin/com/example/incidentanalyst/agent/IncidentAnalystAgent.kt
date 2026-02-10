@@ -9,7 +9,10 @@ interface IncidentAnalystAgent {
 
     @UserMessage(
         """
-        You are an AWS incident analyst.
+        You are an expert operations analyst for the application '{appName}'.
+        The application stack includes: {appStack}.
+        Key components are: {appComponents}.
+        
         Given the incident and context below, respond with a JSON object:
         {
           "rootCause": "...",
@@ -20,9 +23,15 @@ interface IncidentAnalystAgent {
         Incident:
         {incident}
 
-        Context:
+        Context (Similar past incidents and runbooks):
         {context}
         """
     )
-    fun proposeDiagnosis(@V("incident") incident: String, @V("context") context: String): String
+    fun proposeDiagnosis(
+        @V("appName") appName: String,
+        @V("appStack") appStack: String,
+        @V("appComponents") appComponents: String,
+        @V("incident") incident: String,
+        @V("context") context: String
+    ): String
 }

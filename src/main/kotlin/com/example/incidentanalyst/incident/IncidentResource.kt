@@ -169,6 +169,34 @@ class IncidentResource(
         )
     }
 
+    @POST
+    @Path("/{id}/verify-diagnosis")
+    @Produces(MediaType.TEXT_HTML)
+    @Blocking
+    fun verifyDiagnosis(@PathParam("id") id: Long): Response {
+        val incidentId = IncidentId(id)
+        val incidentResult = incidentService.getById(incidentId)
+        
+        return incidentResult.fold(
+            ifLeft = { Response.status(Response.Status.NOT_FOUND).build() },
+            ifRight = { incident ->
+                val diagnosis = diagnosisService.getByIncidentId(incident.id.value)
+                if (diagnosis == null) {
+                    return@fold Response.status(Response.Status.BAD_REQUEST).build()
+                }
+                
+                diagnosisService.verify(diagnosis.id, "Current User").fold(
+                    ifLeft = { Response.serverError().build() },
+                    ifRight = {
+                        val updatedIncident = incidentService.getById(incidentId).getOrNull()!!
+                        val viewModel = mapToDetailViewModel(updatedIncident)
+                        Response.ok(detailTemplate.data("incident", viewModel)).build()
+                    }
+                )
+            }
+        )
+    }
+
     private fun mapToListViewModel(
         incidents: List<Incident>,
         query: String?,
@@ -242,7 +270,8 @@ class IncidentResource(
                         "MEDIUM" -> "warning"
                         else -> "error"
                     },
-                    progress = generateDiagnosisProgress(incident.status)
+                    progress = generateDiagnosisProgress(incident.status),
+                    verified = d.verification is com.example.incidentanalyst.diagnosis.DiagnosisVerification.VerifiedByHuman
                 )
             },
             timeline = generateTimeline(incident)

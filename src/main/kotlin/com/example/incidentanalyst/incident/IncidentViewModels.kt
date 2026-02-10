@@ -55,7 +55,8 @@ data class DiagnosisViewModel(
     val steps: List<String>,
     val confidence: String,
     val confidenceColor: String,
-    val progress: List<DiagnosisStepViewModel>
+    val progress: List<DiagnosisStepViewModel>,
+    val verified: Boolean = false
 )
 
 data class TimelineEventViewModel(

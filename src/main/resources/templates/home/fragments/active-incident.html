@@ -70,13 +70,23 @@
           View Details
         </a>
         {#if !activeIncident.hasDiagnosis}
-          <button hx-post="/incidents/{activeIncident.id}/diagnose"
+          <button hx-post="/home/incidents/{activeIncident.id}/diagnose"
                   hx-target="#active-incident-container"
                   hx-swap="innerHTML"
                   class="btn btn-sm btn-outline border-teal-600 text-teal-600 hover:bg-teal-50">
             Diagnose
           </button>
+        {#else if !activeIncident.verified}
+          <button hx-post="/home/incidents/{activeIncident.id}/verify-diagnosis"
+                  hx-target="#active-incident-container"
+                  hx-swap="innerHTML"
+                  class="btn btn-sm btn-outline border-teal-600 text-teal-600 hover:bg-teal-50">
+            Verify
+          </button>
+        {#else}
+          <div class="badge badge-success badge-sm py-3">Verified</div>
         {/if}
+
       </div>
     </div>
   </div>

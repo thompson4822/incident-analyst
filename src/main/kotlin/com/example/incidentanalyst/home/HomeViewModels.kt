@@ -35,7 +35,8 @@ data class ActiveIncidentViewModel(
     val updatedAt: String,
     val source: String,
     val hasDiagnosis: Boolean,
-    val diagnosisProgress: List<DiagnosisStepViewModel>
+    val diagnosisProgress: List<DiagnosisStepViewModel>,
+    val verified: Boolean = false
 )
 
 data class DiagnosisStepViewModel(

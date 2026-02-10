@@ -5,8 +5,10 @@ import com.example.incidentanalyst.incident.Incident
 import com.example.incidentanalyst.incident.IncidentService
 import com.example.incidentanalyst.incident.IncidentStatus
 import com.example.incidentanalyst.incident.Severity
+import io.quarkus.arc.profile.IfBuildProfile
 import io.quarkus.scheduler.Scheduled
 import jakarta.enterprise.context.ApplicationScoped
+import org.eclipse.microprofile.config.inject.ConfigProperty
 import org.jboss.logging.Logger
 import java.time.Instant
 
@@ -16,10 +18,15 @@ class CloudWatchIngestionService(
     private val incidentService: IncidentService
 ) {
 
+    @ConfigProperty(name = "app.ingestion.cloudwatch.enabled", defaultValue = "true")
+    var enabled: Boolean = true
+
     private val log = Logger.getLogger(javaClass)
 
     @Scheduled(every = "60s")
     fun pollIncidents() {
+        if (!enabled) return
+        
         ingestAlarms().fold(
             ifLeft = { /* Result already logged, no action needed */ },
             ifRight = { success ->
@@ -149,12 +156,17 @@ class CloudWatchIngestionService(
         val operator = alarm.comparisonOperator?.trim()
 
         val isGreaterThanOperator = operator.equals("GreaterThanThreshold", ignoreCase = true) ||
-                                operator.equals("GreaterThanOrEqualToThreshold", ignoreCase = true)
+            operator.equals("GreaterThanOrEqualToThreshold", ignoreCase = true)
+
+        if (!isGreaterThanOperator) {
+            return Severity.INFO
+        }
 
         return when {
-            isGreaterThanOperator && threshold >= 90.0 -> Severity.HIGH
-            isGreaterThanOperator && threshold >= 70.0 -> Severity.MEDIUM
-            isGreaterThanOperator && threshold >= 50.0 -> Severity.LOW
+            threshold >= 95.0 -> Severity.CRITICAL
+            threshold >= 90.0 -> Severity.HIGH
+            threshold >= 70.0 -> Severity.MEDIUM
+            threshold >= 50.0 -> Severity.LOW
             else -> Severity.INFO
         }
     }

@@ -16,6 +16,12 @@ import jakarta.ws.rs.core.MediaType
 import java.time.Duration
 import java.time.Instant
 
+import com.example.incidentanalyst.agent.IncidentDiagnosisService
+import com.example.incidentanalyst.incident.IncidentId
+import com.example.incidentanalyst.incident.IncidentStatus
+import jakarta.ws.rs.POST
+import jakarta.ws.rs.PathParam
+
 @Path("/")
 class HomeResource {
 
@@ -49,10 +55,36 @@ class HomeResource {
     @Inject
     lateinit var diagnosisService: DiagnosisService
 
+    @Inject
+    lateinit var incidentDiagnosisService: IncidentDiagnosisService
+
     @GET
     @Produces(MediaType.TEXT_HTML)
     @io.smallrye.common.annotation.Blocking
     fun home(): TemplateInstance = homeTemplate.instance()
+
+    @POST
+    @Path("/home/incidents/{id}/diagnose")
+    @Produces(MediaType.TEXT_HTML)
+    @io.smallrye.common.annotation.Blocking
+    fun diagnose(@PathParam("id") id: Long): TemplateInstance {
+        val incidentId = IncidentId(id)
+        incidentDiagnosisService.diagnose(incidentId)
+        return activeIncident()
+    }
+
+    @POST
+    @Path("/home/incidents/{id}/verify-diagnosis")
+    @Produces(MediaType.TEXT_HTML)
+    @io.smallrye.common.annotation.Blocking
+    fun verifyDiagnosis(@PathParam("id") id: Long): TemplateInstance {
+        val incidentId = IncidentId(id)
+        val diagnosis = diagnosisService.getByIncidentId(id)
+        if (diagnosis != null) {
+            diagnosisService.verify(diagnosis.id, "Current User")
+        }
+        return activeIncident()
+    }
 
     @GET
     @Path("/home/stats")
@@ -161,6 +193,7 @@ class HomeResource {
             val activeIncident = incidents.firstOrNull {
                 it.status != com.example.incidentanalyst.incident.IncidentStatus.Resolved
             }?.let { incident ->
+                val diagnosis = diagnosisService.getByIncidentId(incident.id.value)
                 ActiveIncidentViewModel(
                     id = incident.id.value,
                     title = incident.title,
@@ -173,7 +206,8 @@ class HomeResource {
                     updatedAt = incident.updatedAt.toRelativeTime(),
                     source = incident.source,
                     hasDiagnosis = incident.status is com.example.incidentanalyst.incident.IncidentStatus.Diagnosed,
-                    diagnosisProgress = generateDiagnosisProgress(incident.status)
+                    diagnosisProgress = generateDiagnosisProgress(incident.status),
+                    verified = diagnosis?.verification is com.example.incidentanalyst.diagnosis.DiagnosisVerification.VerifiedByHuman
                 )
             }
 
