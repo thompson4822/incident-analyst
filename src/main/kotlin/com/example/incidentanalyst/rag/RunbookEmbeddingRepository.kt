@@ -23,7 +23,8 @@ class RunbookEmbeddingRepository : PanacheRepository<RunbookEmbeddingEntity> {
                 re.id,
                 re.fragment_id,
                 re.text,
-                1 - (re.embedding <=> :embedding) AS similarity
+                1 - (re.embedding <=> :embedding) AS similarity,
+                re.source_type
             FROM runbook_embeddings re
             WHERE 1 - (re.embedding <=> :embedding) >= :minScore
             ORDER BY similarity DESC
@@ -44,7 +45,8 @@ class RunbookEmbeddingRepository : PanacheRepository<RunbookEmbeddingEntity> {
                 id = (row[0] as Number).toLong(),
                 fragmentId = (row[1] as Number).toLong(),
                 text = row[2] as String?,
-                similarity = (row[3] as Number).toDouble()
+                similarity = (row[3] as Number).toDouble(),
+                sourceType = row[4] as String? ?: "OFFICIAL_RUNBOOK"
             )
         }
     }
@@ -64,7 +66,8 @@ class RunbookEmbeddingRepository : PanacheRepository<RunbookEmbeddingEntity> {
                     id = requireNotNull(entity.id),
                     fragmentId = fragmentId,
                     text = entity.text,
-                    similarity = similarity
+                    similarity = similarity,
+                    sourceType = entity.sourceType
                 )
             } else {
                 null

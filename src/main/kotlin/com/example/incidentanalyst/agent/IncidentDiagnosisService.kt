@@ -99,14 +99,19 @@ class IncidentDiagnosisService(
 
     private fun buildContextText(context: com.example.incidentanalyst.rag.RetrievalContext): String =
         """
-        Similar Incidents:
+        ### Similar Past Cases (Prioritize these):
         ${context.similarIncidents.joinToString("\n---\n") { match ->
-            "ID: ${match.id.value}, Score: ${match.score.value}\nSnippet: ${match.snippet}"
+            val typeLabel = when (match.sourceType) {
+                com.example.incidentanalyst.rag.SourceType.RESOLVED_INCIDENT -> "PAST RESOLUTION (High Priority)"
+                com.example.incidentanalyst.rag.SourceType.VERIFIED_DIAGNOSIS -> "VERIFIED DIAGNOSIS"
+                else -> "RAW INCIDENT"
+            }
+            "Source: $typeLabel\nID: ${match.id.value}\nContent: ${match.snippet}"
         }}
 
-        Similar Runbooks:
+        ### Relevant Runbook Procedures:
         ${context.similarRunbooks.joinToString("\n---\n") { match ->
-            "ID: ${match.id.value}, Score: ${match.score.value}\nSnippet: ${match.snippet}"
+            "ID: ${match.id.value}\nProcedure: ${match.snippet}"
         }}
         """.trimIndent()
 }

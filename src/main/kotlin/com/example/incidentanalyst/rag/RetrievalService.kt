@@ -30,59 +30,7 @@ class RetrievalService @Inject constructor(
         }
 
         val query = buildQueryFromIncident(incident)
-
-        if (query.isBlank()) {
-            return Either.Left(RetrievalError.InvalidQuery)
-        }
-
-        val queryEmbedding = try {
-            embeddingModel.embed(TextSegment.from(query)).content().vector()
-        } catch (e: Exception) {
-            return Either.Left(RetrievalError.ModelUnavailable)
-        }
-
-        val queryEmbeddingBytes = floatArrayToByteArray(queryEmbedding)
-
-        val similarIncidents = try {
-            incidentEmbeddingRepository.findSimilar(
-                queryEmbedding = queryEmbeddingBytes,
-                minScore = 0.7,
-                limit = 5
-            )
-        } catch (e: Exception) {
-            return Either.Left(RetrievalError.SearchFailed)
-        }
-
-        val similarRunbooks = try {
-            runbookEmbeddingRepository.findSimilar(
-                queryEmbedding = queryEmbeddingBytes,
-                minScore = 0.7,
-                limit = 2
-            )
-        } catch (e: Exception) {
-            return Either.Left(RetrievalError.SearchFailed)
-        }
-
-        val context = RetrievalContext(
-            similarIncidents = similarIncidents.map {
-                RetrievalMatch(
-                    id = IncidentId(it.incidentId),
-                    score = EmbeddingScore(it.similarity),
-                    snippet = it.text?.take(200),
-                    sourceType = try { SourceType.valueOf(it.sourceType) } catch (e: Exception) { SourceType.RAW_INCIDENT }
-                )
-            },
-            similarRunbooks = similarRunbooks.map {
-                RetrievalMatch(
-                    id = RunbookFragmentId(it.fragmentId),
-                    score = EmbeddingScore(it.similarity),
-                    snippet = it.text?.take(200)
-                )
-            },
-            query = query
-        )
-
-        return Either.Right(context)
+        return performRetrieval(query)
     }
 
     fun retrieveForRunbook(fragment: RunbookFragment): Either<RetrievalError, RetrievalContext> {
@@ -91,7 +39,10 @@ class RetrievalService @Inject constructor(
         }
 
         val query = buildQueryFromRunbook(fragment)
+        return performRetrieval(query)
+    }
 
+    private fun performRetrieval(query: String): Either<RetrievalError, RetrievalContext> {
         if (query.isBlank()) {
             return Either.Left(RetrievalError.InvalidQuery)
         }
@@ -107,8 +58,8 @@ class RetrievalService @Inject constructor(
         val similarIncidents = try {
             incidentEmbeddingRepository.findSimilar(
                 queryEmbedding = queryEmbeddingBytes,
-                minScore = 0.7,
-                limit = 5
+                minScore = 0.6,
+                limit = 15
             )
         } catch (e: Exception) {
             return Either.Left(RetrievalError.SearchFailed)
@@ -117,8 +68,8 @@ class RetrievalService @Inject constructor(
         val similarRunbooks = try {
             runbookEmbeddingRepository.findSimilar(
                 queryEmbedding = queryEmbeddingBytes,
-                minScore = 0.7,
-                limit = 2
+                minScore = 0.6,
+                limit = 5
             )
         } catch (e: Exception) {
             return Either.Left(RetrievalError.SearchFailed)
@@ -126,20 +77,28 @@ class RetrievalService @Inject constructor(
 
         val context = RetrievalContext(
             similarIncidents = similarIncidents.map {
+                val sourceType = try { SourceType.valueOf(it.sourceType) } catch (e: Exception) { SourceType.RAW_INCIDENT }
+                val boost = when (sourceType) {
+                    SourceType.RESOLVED_INCIDENT -> 1.2
+                    SourceType.VERIFIED_DIAGNOSIS -> 1.1
+                    SourceType.RAW_INCIDENT -> 1.0
+                    SourceType.OFFICIAL_RUNBOOK -> 1.0
+                }
                 RetrievalMatch(
                     id = IncidentId(it.incidentId),
-                    score = EmbeddingScore(it.similarity),
-                    snippet = it.text?.take(200),
-                    sourceType = try { SourceType.valueOf(it.sourceType) } catch (e: Exception) { SourceType.RAW_INCIDENT }
+                    score = EmbeddingScore(it.similarity * boost),
+                    snippet = it.text?.take(400),
+                    sourceType = sourceType
                 )
-            },
+            }.sortedByDescending { it.score.value }.take(5),
             similarRunbooks = similarRunbooks.map {
                 RetrievalMatch(
                     id = RunbookFragmentId(it.fragmentId),
                     score = EmbeddingScore(it.similarity),
-                    snippet = it.text?.take(200)
+                    snippet = it.text?.take(400),
+                    sourceType = SourceType.OFFICIAL_RUNBOOK
                 )
-            },
+            }.sortedByDescending { it.score.value }.take(3),
             query = query
         )
 

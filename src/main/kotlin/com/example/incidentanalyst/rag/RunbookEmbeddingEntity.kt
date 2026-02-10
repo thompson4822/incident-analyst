@@ -31,5 +31,8 @@ open class RunbookEmbeddingEntity(
     open var embedding: ByteArray = ByteArray(0),
 
     @Column(name = "created_at")
-    open var createdAt: Instant = Instant.now()
+    open var createdAt: Instant = Instant.now(),
+
+    @Column(name = "source_type")
+    open var sourceType: String = "OFFICIAL_RUNBOOK"
 ) : PanacheEntityBase

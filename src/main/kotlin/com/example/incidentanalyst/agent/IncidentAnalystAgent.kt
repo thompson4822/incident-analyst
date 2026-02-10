@@ -13,6 +13,14 @@ interface IncidentAnalystAgent {
         The application stack includes: {appStack}.
         Key components are: {appComponents}.
         
+        Your task is to diagnose the current incident using the provided context.
+        
+        ### PRIORITIZATION RULES:
+        1. If a 'PAST RESOLUTION' is provided in the context and matches the current incident, prioritize its solution.
+        2. If a 'VERIFIED DIAGNOSIS' is provided, use it as a high-confidence reference.
+        3. Use 'Relevant Runbook Procedures' for standard troubleshooting steps.
+        4. 'RAW INCIDENT' data is for pattern matching but has lower confidence than verified data.
+
         Given the incident and context below, respond with a JSON object:
         {
           "rootCause": "...",
@@ -23,7 +31,7 @@ interface IncidentAnalystAgent {
         Incident:
         {incident}
 
-        Context (Similar past incidents and runbooks):
+        Context:
         {context}
         """
     )

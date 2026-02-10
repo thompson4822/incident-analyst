@@ -66,15 +66,15 @@ class RetrievalServiceTest {
         whenever(
             incidentEmbeddingRepository.findSimilar(
                 any<ByteArray>(),
-                eq(0.7),
-                eq(5)
+                eq(0.6),
+                eq(15)
             )
         ).thenReturn(similarIncidents)
         whenever(
             runbookEmbeddingRepository.findSimilar(
                 any<ByteArray>(),
-                eq(0.7),
-                eq(2)
+                eq(0.6),
+                eq(5)
             )
         ).thenReturn(similarRunbooks)
 
@@ -135,15 +135,15 @@ class RetrievalServiceTest {
         whenever(
             incidentEmbeddingRepository.findSimilar(
                 any<ByteArray>(),
-                eq(0.7),
-                eq(5)
+                eq(0.6),
+                eq(15)
             )
         ).thenReturn(emptyList())
         whenever(
             runbookEmbeddingRepository.findSimilar(
                 any<ByteArray>(),
-                eq(0.7),
-                eq(2)
+                eq(0.6),
+                eq(5)
             )
         ).thenReturn(emptyList())
 
@@ -177,8 +177,8 @@ class RetrievalServiceTest {
         whenever(
             incidentEmbeddingRepository.findSimilar(
                 any<ByteArray>(),
-                eq(0.7),
-                eq(5)
+                eq(0.6),
+                eq(15)
             )
         ).thenThrow(RuntimeException("Database error"))
 
@@ -233,15 +233,15 @@ class RetrievalServiceTest {
         whenever(
             incidentEmbeddingRepository.findSimilar(
                 any<ByteArray>(),
-                eq(0.7),
-                eq(5)
+                eq(0.6),
+                eq(15)
             )
         ).thenReturn(similarIncidents)
         whenever(
             runbookEmbeddingRepository.findSimilar(
                 any<ByteArray>(),
-                eq(0.7),
-                eq(2)
+                eq(0.6),
+                eq(5)
             )
         ).thenReturn(similarRunbooks)
 
@@ -273,15 +273,15 @@ class RetrievalServiceTest {
         whenever(
             incidentEmbeddingRepository.findSimilar(
                 any<ByteArray>(),
-                eq(0.7),
-                eq(5)
+                eq(0.6),
+                eq(15)
             )
         ).thenReturn(emptyList())
         whenever(
             runbookEmbeddingRepository.findSimilar(
                 any<ByteArray>(),
-                eq(0.7),
-                eq(2)
+                eq(0.6),
+                eq(5)
             )
         ).thenReturn(emptyList())
 
@@ -312,8 +312,8 @@ class RetrievalServiceTest {
         whenever(
             runbookEmbeddingRepository.findSimilar(
                 any<ByteArray>(),
-                eq(0.7),
-                eq(2)
+                eq(0.6),
+                eq(5)
             )
         ).thenThrow(RuntimeException("Database error"))
 
@@ -367,15 +367,15 @@ class RetrievalServiceTest {
         whenever(
             incidentEmbeddingRepository.findSimilar(
                 any<ByteArray>(),
-                eq(0.7),
-                eq(5)
+                eq(0.6),
+                eq(15)
             )
         ).thenReturn(similarIncidents)
         whenever(
             runbookEmbeddingRepository.findSimilar(
                 any<ByteArray>(),
-                eq(0.7),
-                eq(2)
+                eq(0.6),
+                eq(5)
             )
         ).thenReturn(emptyList())
 
@@ -392,7 +392,7 @@ class RetrievalServiceTest {
     }
 
     @Test
-    fun `RetrievalMatch snippet truncated to 200 characters`() {
+    fun `RetrievalMatch snippet truncated to 400 characters`() {
         // Arrange
         val incident = Incident(
             id = IncidentId(1L),
@@ -405,7 +405,7 @@ class RetrievalServiceTest {
             updatedAt = testTimestamp
         )
         val queryEmbedding = createMockEmbedding()
-        val longText = "A".repeat(300)
+        val longText = "A".repeat(500)
         val similarIncidents = listOf(
             SimilarIncidentResult(
                 id = 1L,
@@ -421,15 +421,15 @@ class RetrievalServiceTest {
         whenever(
             incidentEmbeddingRepository.findSimilar(
                 any<ByteArray>(),
-                eq(0.7),
-                eq(5)
+                eq(0.6),
+                eq(15)
             )
         ).thenReturn(similarIncidents)
         whenever(
             runbookEmbeddingRepository.findSimilar(
                 any<ByteArray>(),
-                eq(0.7),
-                eq(2)
+                eq(0.6),
+                eq(5)
             )
         ).thenReturn(emptyList())
 
@@ -440,7 +440,7 @@ class RetrievalServiceTest {
         assertTrue(result is Either.Right)
         val context = (result as Either.Right).value
         val match = context.similarIncidents[0]
-        assertTrue(match.snippet!!.length <= 200)
+        assertTrue(match.snippet!!.length <= 400)
     }
 
     @Test
@@ -473,15 +473,15 @@ class RetrievalServiceTest {
         whenever(
             incidentEmbeddingRepository.findSimilar(
                 any<ByteArray>(),
-                eq(0.7),
-                eq(5)
+                eq(0.6),
+                eq(15)
             )
         ).thenReturn(similarIncidents)
         whenever(
             runbookEmbeddingRepository.findSimilar(
                 any<ByteArray>(),
-                eq(0.7),
-                eq(2)
+                eq(0.6),
+                eq(5)
             )
         ).thenReturn(emptyList())
 
@@ -492,6 +492,7 @@ class RetrievalServiceTest {
         assertTrue(result is Either.Right)
         val context = (result as Either.Right).value
         val match = context.similarIncidents[0]
+        // Note: score might be boosted, but for RAW_INCIDENT it's 1.0x
         assertEquals(similarity, match.score.value, 0.001)
     }
 
@@ -524,15 +525,15 @@ class RetrievalServiceTest {
         whenever(
             incidentEmbeddingRepository.findSimilar(
                 any<ByteArray>(),
-                eq(0.7),
-                eq(5)
+                eq(0.6),
+                eq(15)
             )
         ).thenReturn(similarIncidents)
         whenever(
             runbookEmbeddingRepository.findSimilar(
                 any<ByteArray>(),
-                eq(0.7),
-                eq(2)
+                eq(0.6),
+                eq(5)
             )
         ).thenReturn(emptyList())
 
@@ -575,15 +576,15 @@ class RetrievalServiceTest {
         whenever(
             incidentEmbeddingRepository.findSimilar(
                 any<ByteArray>(),
-                eq(0.7),
-                eq(5)
+                eq(0.6),
+                eq(15)
             )
         ).thenReturn(similarIncidents)
         whenever(
             runbookEmbeddingRepository.findSimilar(
                 any<ByteArray>(),
-                eq(0.7),
-                eq(2)
+                eq(0.6),
+                eq(5)
             )
         ).thenReturn(emptyList())
 
@@ -623,15 +624,15 @@ class RetrievalServiceTest {
         whenever(
             incidentEmbeddingRepository.findSimilar(
                 any<ByteArray>(),
-                eq(0.7),
-                eq(5)
+                eq(0.6),
+                eq(15)
             )
         ).thenReturn(similarIncidents)
         whenever(
             runbookEmbeddingRepository.findSimilar(
                 any<ByteArray>(),
-                eq(0.7),
-                eq(2)
+                eq(0.6),
+                eq(5)
             )
         ).thenReturn(emptyList())
 
@@ -668,7 +669,8 @@ class RetrievalServiceTest {
                 id = i.toLong(),
                 fragmentId = 20L + i,
                 text = "Similar runbook text $i",
-                similarity = 0.85 - (i * 0.05)
+                similarity = 0.85 - (i * 0.05),
+                sourceType = "OFFICIAL_RUNBOOK"
             )
         }
     }

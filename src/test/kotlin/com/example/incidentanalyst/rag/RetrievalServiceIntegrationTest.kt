@@ -143,9 +143,9 @@ class RetrievalServiceIntegrationTest {
         assertTrue(context.similarIncidents.isNotEmpty())
         assertTrue(context.similarIncidents.size <= 5) // Top-K limit of 5
 
-        // Verify scores are above minimum threshold
+        // Verify scores are above minimum threshold (0.6 now)
         context.similarIncidents.forEach { match ->
-            assertTrue(match.score.value >= 0.7, "Score ${match.score.value} should be >= 0.7")
+            assertTrue(match.score.value >= 0.6, "Score ${match.score.value} should be >= 0.6")
         }
     }
 
@@ -205,11 +205,11 @@ class RetrievalServiceIntegrationTest {
         assertTrue(result is Either.Right)
         val context = (result as Either.Right).value
         assertTrue(context.similarRunbooks.isNotEmpty())
-        assertTrue(context.similarRunbooks.size <= 2) // Top-K limit of 2
+        assertTrue(context.similarRunbooks.size <= 3) // Top-K limit of 3
 
-        // Verify scores are above minimum threshold
+        // Verify scores are above minimum threshold (0.6 now)
         context.similarRunbooks.forEach { match ->
-            assertTrue(match.score.value >= 0.7, "Score ${match.score.value} should be >= 0.7")
+            assertTrue(match.score.value >= 0.6, "Score ${match.score.value} should be >= 0.6")
         }
     }
 
@@ -279,11 +279,11 @@ class RetrievalServiceIntegrationTest {
         val context = (result as Either.Right).value
 
         if (context.similarIncidents.size >= 2) {
-            var previousScore = 1.0
+            var previousScore = Double.MAX_VALUE
             context.similarIncidents.forEach { match ->
                 assertTrue(
                     match.score.value <= previousScore,
-                    "Scores should be in descending order"
+                    "Scores should be in descending order. Got ${match.score.value} after $previousScore"
                 )
                 previousScore = match.score.value
             }
@@ -292,7 +292,7 @@ class RetrievalServiceIntegrationTest {
 
     @Test
     @Transactional
-    fun `verify score filtering - results above 0_7 threshold`() {
+    fun `verify score filtering - results above 0_6 threshold`() {
         // Arrange - Create incidents
         val timestamp = Instant.now()
         val incident1 = Incident(
@@ -324,14 +324,14 @@ class RetrievalServiceIntegrationTest {
 
         val result = retrievalService.retrieve(queryIncident)
 
-        // Assert - All results should have score >= 0.7
+        // Assert - All results should have score >= 0.6
         assertTrue(result is Either.Right)
         val context = (result as Either.Right).value
 
         context.similarIncidents.forEach { match ->
             assertTrue(
-                match.score.value >= 0.7,
-                "Score ${match.score.value} should be >= 0.7"
+                match.score.value >= 0.6,
+                "Score ${match.score.value} should be >= 0.6"
             )
         }
     }
