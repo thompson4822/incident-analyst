@@ -49,6 +49,9 @@ class EmbeddingServiceIntegrationTest {
     @Inject
     lateinit var runbookEmbeddingRepository: RunbookEmbeddingRepository
 
+    @Inject
+    lateinit var diagnosisRepository: com.example.incidentanalyst.diagnosis.DiagnosisRepository
+
     @BeforeEach
     @Transactional
     fun setup() {
@@ -56,8 +59,10 @@ class EmbeddingServiceIntegrationTest {
         whenever(embeddingModel.embed(any<TextSegment>()))
             .thenReturn(Response.from(Embedding.from(createMockEmbedding())))
 
+        // Clear database in correct order to respect foreign keys
         incidentEmbeddingRepository.deleteAll()
         runbookEmbeddingRepository.deleteAll()
+        diagnosisRepository.deleteAll()
         runbookFragmentRepository.deleteAll()
         incidentRepository.deleteAll()
     }

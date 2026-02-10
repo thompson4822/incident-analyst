@@ -7,6 +7,7 @@ import jakarta.transaction.Transactional
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.time.Instant
 
@@ -15,6 +16,28 @@ class IncidentServiceIntegrationTest {
 
     @Inject
     lateinit var incidentService: IncidentService
+
+    @Inject
+    lateinit var incidentRepository: IncidentRepository
+
+    @Inject
+    lateinit var diagnosisRepository: com.example.incidentanalyst.diagnosis.DiagnosisRepository
+
+    @Inject
+    lateinit var incidentEmbeddingRepository: com.example.incidentanalyst.rag.IncidentEmbeddingRepository
+
+    @Inject
+    lateinit var runbookEmbeddingRepository: com.example.incidentanalyst.rag.RunbookEmbeddingRepository
+
+    @BeforeEach
+    @Transactional
+    fun setup() {
+        // Clear database in correct order to respect foreign keys
+        incidentEmbeddingRepository.deleteAll()
+        runbookEmbeddingRepository.deleteAll()
+        diagnosisRepository.deleteAll()
+        incidentRepository.deleteAll()
+    }
 
     @Test
     @Transactional

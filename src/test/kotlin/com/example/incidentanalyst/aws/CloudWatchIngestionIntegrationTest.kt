@@ -33,11 +33,23 @@ class CloudWatchIngestionIntegrationTest {
     @Inject
     lateinit var incidentRepository: IncidentRepository
 
+    @Inject
+    lateinit var diagnosisRepository: com.example.incidentanalyst.diagnosis.DiagnosisRepository
+
+    @Inject
+    lateinit var incidentEmbeddingRepository: com.example.incidentanalyst.rag.IncidentEmbeddingRepository
+
+    @Inject
+    lateinit var runbookEmbeddingRepository: com.example.incidentanalyst.rag.RunbookEmbeddingRepository
+
     @BeforeEach
     @Transactional
     fun setup() {
         reset(cloudWatchAlarmClient)
-        // Clear database before each test to ensure isolation
+        // Clear database in correct order to respect foreign keys
+        incidentEmbeddingRepository.deleteAll()
+        runbookEmbeddingRepository.deleteAll()
+        diagnosisRepository.deleteAll()
         incidentRepository.deleteAll()
     }
 

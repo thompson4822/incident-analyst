@@ -2,6 +2,7 @@ package com.example.incidentanalyst.incident
 
 import com.example.incidentanalyst.aws.CloudWatchTestDataGeneratorService
 import com.example.incidentanalyst.aws.CloudWatchTestDataRequestDto
+import io.quarkus.arc.profile.IfBuildProfile
 import io.quarkus.runtime.StartupEvent
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.enterprise.event.Observes
@@ -13,6 +14,7 @@ import org.jboss.logging.Logger
  * Static seed data is handled by Flyway in src/main/resources/db/dev-data.
  */
 @ApplicationScoped
+@IfBuildProfile("!test")
 class IncidentDataInitializer {
     private val log = Logger.getLogger(javaClass)
 

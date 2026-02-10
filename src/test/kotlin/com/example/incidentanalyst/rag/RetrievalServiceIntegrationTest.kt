@@ -66,6 +66,7 @@ class RetrievalServiceIntegrationTest {
         whenever(embeddingModel.embed(any<TextSegment>()))
             .thenReturn(Response.from(Embedding.from(createMockEmbedding())))
 
+        // Clear database in correct order to respect foreign keys
         incidentEmbeddingRepository.deleteAll()
         runbookEmbeddingRepository.deleteAll()
         diagnosisRepository.deleteAll()
@@ -695,7 +696,7 @@ class RetrievalServiceIntegrationTest {
 
         // Assert
         assertTrue(embeddings.isNotEmpty())
-        val verifiedEmbedding = embeddings.find { it.sourceType == "VERIFIED_DIAGNOSIS" }
+        val verifiedEmbedding = embeddings.find { it.sourceType == SourceType.VERIFIED_DIAGNOSIS.name }
         assertNotNull(verifiedEmbedding)
 
         // Verify text contains all components
@@ -771,7 +772,7 @@ class RetrievalServiceIntegrationTest {
 
         // Act - Query embeddings
         val embeddings = incidentEmbeddingRepository.listAll()
-        val verifiedEmbeddings = embeddings.filter { it.sourceType == "VERIFIED_DIAGNOSIS" }
+        val verifiedEmbeddings = embeddings.filter { it.sourceType == SourceType.VERIFIED_DIAGNOSIS.name }
 
         // Assert
         assertEquals(2, verifiedEmbeddings.size)

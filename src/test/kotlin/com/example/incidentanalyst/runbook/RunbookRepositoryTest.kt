@@ -19,9 +19,13 @@ class RunbookRepositoryTest {
     @Inject
     lateinit var runbookFragmentRepository: RunbookFragmentRepository
 
+    @Inject
+    lateinit var runbookEmbeddingRepository: com.example.incidentanalyst.rag.RunbookEmbeddingRepository
+
     @BeforeEach
     @Transactional
     fun cleanup() {
+        runbookEmbeddingRepository.deleteAll()
         runbookFragmentRepository.deleteAll()
     }
 
