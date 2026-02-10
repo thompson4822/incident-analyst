@@ -27,8 +27,21 @@ Knowledge is treated as a first-class citizen:
 - **Runbooks**: The "Procedure" state.
 
 ## Technical Roadmap
-1.  **Phase 1: Knowledge Capture**: Implement the "Verify" and "Promote" logic to start building the learning loop.
-2.  **Phase 2: Contextualization**: Move domain-specific logic into dynamic configuration profiles.
-3.  **Phase 3: Weighted RAG**: Update retrieval logic to prioritize human-verified knowledge over raw AI suggestions.
-4.  **Phase 4: Resolution Loop**: Force the capture of the "Actual Fix" during incident resolution.
-5.  **Phase 5: Generic Ingestion**: Support non-AWS sources via a unified webhook adapter.
+
+### ✅ Phase 1: Knowledge Capture (COMPLETED)
+Implemented the "Verify" and "Promote" logic. Human-verified diagnoses are now automatically embedded into the RAG vector store.
+
+### ✅ Phase 2: Contextualization (COMPLETED)
+Moved domain-specific logic into dynamic configuration profiles. The AI now understands the specific application context (Name, Stack, Components).
+
+### ✅ Phase 3: Weighted RAG (COMPLETED)
+Updated retrieval logic to prioritize human-verified knowledge and past resolutions over raw AI suggestions using a weighted boosting engine.
+
+### ✅ Phase 4: Resolution Loop (COMPLETED)
+Implemented mandatory capture of the "Actual Fix" during incident resolution, with automated promotion to the knowledge base.
+
+### ⏳ Phase 5: Generic Ingestion (IN PROGRESS)
+Support non-AWS sources via a unified webhook adapter to prove domain agnosticism.
+
+### 📅 Phase 6: Remediation Executor (PLANNED)
+Turn AI-suggested steps into real, executable actions via a pluggable executor system.
