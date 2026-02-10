@@ -176,4 +176,33 @@ class IncidentServiceTest {
             }
         }
     }
+
+    @Test
+    fun `resolve updates status and resolutionText successfully`() {
+        // Arrange
+        val testId = 123L
+        val testTimestamp = Instant.now()
+        val entity = IncidentEntity(
+            id = testId,
+            source = "monitoring",
+            title = "Test incident",
+            description = "Description",
+            severity = "HIGH",
+            status = "OPEN",
+            createdAt = testTimestamp,
+            updatedAt = testTimestamp
+        )
+        whenever(incidentRepository.findById(testId)).thenReturn(entity)
+
+        // Act
+        val result = incidentService.resolve(IncidentId(testId), "Fixed it")
+
+        // Assert
+        assertTrue(result is Either.Right)
+        val incident = (result as Either.Right).value
+        assertTrue(incident.status is IncidentStatus.Resolved)
+        assertEquals("Fixed it", incident.resolutionText)
+        assertEquals("RESOLVED", entity.status)
+        assertEquals("Fixed it", entity.resolutionText)
+    }
 }

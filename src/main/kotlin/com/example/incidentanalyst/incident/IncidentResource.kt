@@ -22,7 +22,8 @@ import java.time.Instant
 class IncidentResource(
     private val incidentService: IncidentService,
     private val diagnosisService: DiagnosisService,
-    private val incidentDiagnosisService: IncidentDiagnosisService
+    private val incidentDiagnosisService: IncidentDiagnosisService,
+    private val embeddingService: com.example.incidentanalyst.rag.EmbeddingService
 ) {
 
     @Inject
@@ -110,13 +111,32 @@ class IncidentResource(
     @Path("/{id}/resolve")
     @Produces(MediaType.TEXT_HTML)
     @Blocking
-    fun resolve(@PathParam("id") id: Long, @Context headers: HttpHeaders): Response {
+    fun resolve(
+        @PathParam("id") id: Long,
+        @FormParam("resolutionText") resolutionText: String?
+    ): Response {
         val incidentId = IncidentId(id)
-        return incidentService.updateStatus(incidentId, IncidentStatus.Resolved).fold(
+        val text = resolutionText ?: "No resolution provided"
+        
+        return incidentService.resolve(incidentId, text).fold(
             ifLeft = { Response.status(Response.Status.NOT_FOUND).build() },
             ifRight = { incident ->
+                // Promote to RAG
+                embeddingService.embedResolution(incidentId)
+                
                 val viewModel = mapToDetailViewModel(incident)
-                Response.ok(detailTemplate.data("incident", viewModel)).build()
+                
+                // Add a timeline event for resolution
+                val updatedTimeline = viewModel.timeline.toMutableList()
+                updatedTimeline.add(0, TimelineEventViewModel(
+                    timestamp = "Just now",
+                    action = "Incident Resolved",
+                    description = text,
+                    color = "success",
+                    icon = "check"
+                ))
+                
+                Response.ok(detailTemplate.data("incident", viewModel.copy(timeline = updatedTimeline))).build()
             }
         )
     }
@@ -259,6 +279,7 @@ class IncidentResource(
             duration = durationStr,
             tags = extractTags(incident.description, incident.source),
             assignee = "Unassigned",
+            resolutionText = incident.resolutionText,
             diagnosis = diagnosis?.let { d ->
                 DiagnosisViewModel(
                     id = d.id.value,

@@ -18,7 +18,8 @@ data class IncidentDetailViewModel(
     val tags: List<String>,
     val assignee: String?,
     val diagnosis: DiagnosisViewModel?,
-    val timeline: List<TimelineEventViewModel>
+    val timeline: List<TimelineEventViewModel>,
+    val resolutionText: String? = null
 )
 
 data class IncidentListViewModel(

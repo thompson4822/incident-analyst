@@ -46,4 +46,13 @@ class IncidentService(
         entity.updatedAt = Instant.now()
         return Either.Right(entity.toDomain())
     }
+
+    @Transactional
+    fun resolve(id: IncidentId, resolutionText: String): Either<IncidentError, Incident> {
+        val entity = incidentRepository.findById(id.value) ?: return Either.Left(IncidentError.NotFound)
+        entity.status = "RESOLVED"
+        entity.resolutionText = resolutionText
+        entity.updatedAt = Instant.now()
+        return Either.Right(entity.toDomain())
+    }
 }

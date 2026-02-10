@@ -28,7 +28,8 @@ data class Incident(
     val severity: Severity,
     val status: IncidentStatus,
     val createdAt: Instant,
-    val updatedAt: Instant
+    val updatedAt: Instant,
+    val resolutionText: String? = null
 )
 
 fun IncidentEntity.toDomain(): Incident =
@@ -56,7 +57,8 @@ fun IncidentEntity.toDomain(): Incident =
             }
         },
         createdAt = createdAt,
-        updatedAt = updatedAt
+        updatedAt = updatedAt,
+        resolutionText = resolutionText
     )
 
 fun Incident.toEntity(): IncidentEntity =
@@ -73,5 +75,6 @@ fun Incident.toEntity(): IncidentEntity =
             is IncidentStatus.Diagnosed -> "DIAGNOSED:${status.diagnosisId}"
         },
         createdAt = createdAt,
-        updatedAt = updatedAt
+        updatedAt = updatedAt,
+        resolutionText = resolutionText
     )

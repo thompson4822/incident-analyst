@@ -164,6 +164,42 @@ class EmbeddingService(
             Either.Left(EmbeddingError.EmbeddingFailed)
         }
     }
+
+    @Transactional
+    fun embedResolution(incidentId: IncidentId): Either<EmbeddingError, Int> {
+        val incident = incidentRepository.findById(incidentId.value)
+            ?: return Either.Left(EmbeddingError.Unexpected)
+
+        val resolutionText = incident.resolutionText
+            ?: return Either.Left(EmbeddingError.InvalidText)
+
+        val text = buildString {
+            append("Title: ").append(incident.title).append("\n")
+            append("Description: ").append(incident.description).append("\n")
+            append("Resolution: ").append(resolutionText)
+        }.trim()
+
+        return try {
+            val embedding = embeddingModel.embed(TextSegment.from(text)).content().vector()
+            val embeddingBytes = floatArrayToByteArray(embedding)
+
+            val entity = IncidentEmbeddingEntity(
+                incident = incident,
+                text = text,
+                embedding = embeddingBytes,
+                sourceType = "RESOLVED_INCIDENT"
+            )
+
+            incidentEmbeddingRepository.persist(entity)
+            Either.Right(1)
+        } catch (e: ConstraintViolationException) {
+            Either.Left(
+                EmbeddingError.PersistenceError(e.message ?: "Constraint violation")
+            )
+        } catch (e: Exception) {
+            Either.Left(EmbeddingError.EmbeddingFailed)
+        }
+    }
 }
 
 private fun floatArrayToByteArray(floatArray: FloatArray): ByteArray {

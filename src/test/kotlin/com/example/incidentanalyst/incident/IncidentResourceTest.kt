@@ -356,4 +356,34 @@ class IncidentResourceTest {
             .then()
             .statusCode(400)
     }
+
+    @Test
+    fun `POST resolve returns 200 with updated DTO`() {
+        // Arrange
+        val testId = 123L
+        val testTimestamp = Instant.now()
+        val resolutionText = "Fixed the issue"
+        val incident = Incident(
+            id = IncidentId(testId),
+            source = "monitoring",
+            title = "High CPU usage",
+            description = "CPU usage exceeded 90%",
+            severity = Severity.HIGH,
+            status = IncidentStatus.Resolved,
+            createdAt = testTimestamp,
+            updatedAt = testTimestamp,
+            resolutionText = resolutionText
+        )
+        whenever(incidentService.resolve(IncidentId(testId), resolutionText))
+            .thenReturn(Either.Right(incident))
+
+        // Act & Assert
+        given()
+            .contentType(ContentType.URLENC)
+            .formParam("resolutionText", resolutionText)
+            .`when`()
+            .post("/incidents/$testId/resolve")
+            .then()
+            .statusCode(200)
+    }
 }

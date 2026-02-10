@@ -46,10 +46,7 @@
           <!-- Actions -->
           <div class="flex flex-wrap gap-2">
             <button class="btn btn-primary btn-sm px-6 bg-teal-600 hover:bg-teal-700 border-none text-white"
-                    hx-post="/incidents/{incident.id}/resolve"
-                    hx-target="main"
-                    hx-select="main"
-                    hx-swap="outerHTML">Resolve</button>
+                    onclick="resolution_modal.showModal()">Resolve</button>
             <button class="btn btn-outline btn-sm border-slate-200 text-slate-700 hover:bg-slate-50"
                     hx-post="/incidents/{incident.id}/acknowledge"
                     hx-target="main"
@@ -82,8 +79,19 @@
         
         <!-- Description Card -->
         <div class="card bg-white/90 border border-slate-200 shadow-sm">
-          <div class="card-body p-6">
-            <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-500 mb-4">Description</h2>
+            <div class="card-body p-6">
+              {#if incident.resolutionText}
+                <div class="mb-6 p-4 bg-teal-50 border border-teal-100 rounded-lg">
+                  <h3 class="text-xs font-bold text-teal-800 uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                    </svg>
+                    Resolution
+                  </h3>
+                  <p class="text-sm text-slate-700 italic">"{incident.resolutionText}"</p>
+                </div>
+              {/if}
+              <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-500 mb-4">Description</h2>
             <div class="prose prose-sm max-w-none text-slate-700">
               <p class="whitespace-pre-wrap">{incident.description}</p>
             </div>
@@ -304,5 +312,33 @@
       </div>
     </div>
   </div>
+
+  <!-- Resolution Modal -->
+  <dialog id="resolution_modal" class="modal">
+    <div class="modal-box bg-white">
+      <h3 class="font-bold text-lg text-slate-900">Resolve Incident</h3>
+      <p class="py-4 text-sm text-slate-600">Please describe what was done to resolve this incident. This information will be used to improve future AI diagnoses.</p>
+      
+      <form hx-post="/incidents/{incident.id}/resolve" 
+            hx-target="main" 
+            hx-select="main" 
+            hx-swap="outerHTML"
+            onsubmit="resolution_modal.close()">
+        <div class="form-control">
+          <textarea name="resolutionText" 
+                    class="textarea textarea-bordered bg-white text-slate-900 h-32 focus:border-teal-500" 
+                    placeholder="e.g. Restarted the payment service and cleared the SQS dead-letter queue."
+                    required></textarea>
+        </div>
+        <div class="modal-action">
+          <button type="button" class="btn btn-ghost btn-sm" onclick="resolution_modal.close()">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm bg-teal-600 hover:bg-teal-700 border-none text-white">Confirm Resolution</button>
+        </div>
+      </form>
+    </div>
+    <form method="dialog" class="modal-backdrop">
+      <button>close</button>
+    </form>
+  </dialog>
 {/body}
 {/include}

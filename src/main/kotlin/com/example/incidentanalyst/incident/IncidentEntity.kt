@@ -24,5 +24,7 @@ open class IncidentEntity(
     @Column(name = "created_at")
     open var createdAt: Instant = Instant.now(),
     @Column(name = "updated_at")
-    open var updatedAt: Instant = Instant.now()
+    open var updatedAt: Instant = Instant.now(),
+    @Column(name = "resolution_text", columnDefinition = "text")
+    open var resolutionText: String? = null
 ) : PanacheEntityBase
