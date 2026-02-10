@@ -13,7 +13,6 @@ import dev.langchain4j.model.embedding.EmbeddingModel
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.transaction.Transactional
 import org.hibernate.exception.ConstraintViolationException
-import java.nio.ByteBuffer
 
 @ApplicationScoped
 class EmbeddingService(
@@ -41,12 +40,12 @@ class EmbeddingService(
 
         return try {
             val embedding = embeddingModel.embed(TextSegment.from(text)).content().vector()
-            val embeddingBytes = floatArrayToByteArray(embedding)
+            val embeddingString = floatArrayToVectorString(embedding)
 
             val entity = IncidentEmbeddingEntity(
                 incident = incident,
                 text = text,
-                embedding = embeddingBytes
+                embedding = embeddingString
             )
 
             incidentEmbeddingRepository.persist(entity)
@@ -76,12 +75,12 @@ class EmbeddingService(
 
         return try {
             val embedding = embeddingModel.embed(TextSegment.from(text)).content().vector()
-            val embeddingBytes = floatArrayToByteArray(embedding)
+            val embeddingString = floatArrayToVectorString(embedding)
 
             val entity = RunbookEmbeddingEntity(
                 fragment = fragment,
                 text = text,
-                embedding = embeddingBytes
+                embedding = embeddingString
             )
 
             runbookEmbeddingRepository.persist(entity)
@@ -144,12 +143,12 @@ class EmbeddingService(
 
         return try {
             val embedding = embeddingModel.embed(TextSegment.from(text)).content().vector()
-            val embeddingBytes = floatArrayToByteArray(embedding)
+            val embeddingString = floatArrayToVectorString(embedding)
 
             val entity = IncidentEmbeddingEntity(
                 incident = incident,
                 text = text,
-                embedding = embeddingBytes,
+                embedding = embeddingString,
                 sourceType = "VERIFIED_DIAGNOSIS",
                 diagnosisId = diagnosis.id
             )
@@ -181,12 +180,12 @@ class EmbeddingService(
 
         return try {
             val embedding = embeddingModel.embed(TextSegment.from(text)).content().vector()
-            val embeddingBytes = floatArrayToByteArray(embedding)
+            val embeddingString = floatArrayToVectorString(embedding)
 
             val entity = IncidentEmbeddingEntity(
                 incident = incident,
                 text = text,
-                embedding = embeddingBytes,
+                embedding = embeddingString,
                 sourceType = "RESOLVED_INCIDENT"
             )
 
@@ -202,8 +201,5 @@ class EmbeddingService(
     }
 }
 
-private fun floatArrayToByteArray(floatArray: FloatArray): ByteArray {
-    val buffer = ByteBuffer.allocate(floatArray.size * java.lang.Float.BYTES)
-    floatArray.forEach { buffer.putFloat(it) }
-    return buffer.array()
-}
+private fun floatArrayToVectorString(floats: FloatArray): String =
+    floats.joinToString(prefix = "[", postfix = "]", separator = ",")

@@ -164,7 +164,9 @@ class EmbeddingServiceIntegrationTest {
         assertEquals(incidentId.value, storedEmbedding.incident?.id)
         assertTrue(storedEmbedding.text.contains("Memory leak detected"))
         assertTrue(storedEmbedding.text.contains("Memory usage steadily increasing"))
-        assertEquals(768 * 4, storedEmbedding.embedding.size) // 768 floats * 4 bytes per float
+        // Check that it's a valid vector string
+        assertTrue(storedEmbedding.embedding.startsWith("["))
+        assertTrue(storedEmbedding.embedding.endsWith("]"))
         assertNotNull(storedEmbedding.createdAt)
     }
 
@@ -193,13 +195,10 @@ class EmbeddingServiceIntegrationTest {
         // Assert
         val embedding = incidentEmbeddingRepository.findAll().firstResult()
         assertNotNull(embedding)
-        val storedVector = requireNotNull(embedding).embedding
-
-        // Verify we can read the vector back
-        assertEquals(3072, storedVector.size) // 768 floats * 4 bytes
+        val storedVectorString = requireNotNull(embedding).embedding
 
         // Verify the vector can be converted back to floats
-        val floatArray = byteArrayToFloatArray(storedVector)
+        val floatArray = vectorStringToFloatArray(storedVectorString)
         assertEquals(768, floatArray.size)
         assertTrue(floatArray.any { it > 0f }) // Ensure we have non-zero values
     }
@@ -397,16 +396,12 @@ class EmbeddingServiceIntegrationTest {
         assertTrue(storedEmbedding.text.contains("Test Description XYZ789"))
     }
 
-    private fun byteArrayToFloatArray(byteArray: ByteArray): FloatArray {
-        val floatArray = FloatArray(byteArray.size / 4)
-        for (i in floatArray.indices) {
-            val bits = (byteArray[i * 4].toInt() and 0xFF) or
-                ((byteArray[i * 4 + 1].toInt() and 0xFF) shl 8) or
-                ((byteArray[i * 4 + 2].toInt() and 0xFF) shl 16) or
-                ((byteArray[i * 4 + 3].toInt() and 0xFF) shl 24)
-            floatArray[i] = java.lang.Float.intBitsToFloat(bits)
-        }
-        return floatArray
+    private fun vectorStringToFloatArray(vector: String): FloatArray {
+        if (vector.isBlank()) return FloatArray(0)
+        return vector.removePrefix("[").removeSuffix("]")
+            .split(",")
+            .map { it.trim().toFloat() }
+            .toFloatArray()
     }
 
     private fun createMockEmbedding(): FloatArray {

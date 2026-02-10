@@ -27,8 +27,8 @@ open class IncidentEmbeddingEntity(
     @Column(columnDefinition = "text")
     open var text: String = "",
 
-    @Column(columnDefinition = "vector")
-    open var embedding: ByteArray = ByteArray(0),
+    @Column(name = "embedding")
+    open var embedding: String = "",
 
     @Column(name = "created_at")
     open var createdAt: Instant = Instant.now(),

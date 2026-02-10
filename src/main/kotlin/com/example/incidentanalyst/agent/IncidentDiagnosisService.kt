@@ -17,6 +17,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.transaction.Transactional
 import java.time.Instant
+import org.jboss.logging.Logger
 
 import com.example.incidentanalyst.config.ProfileService
 
@@ -29,23 +30,28 @@ class IncidentDiagnosisService(
     private val objectMapper: ObjectMapper,
     private val profileService: ProfileService
 ) {
+    private val log = Logger.getLogger(javaClass)
 
     @Transactional
     fun diagnose(incidentId: IncidentId): Either<DiagnosisError, DiagnosisSuccess> {
+        log.infof("Starting diagnosis for incident %d", incidentId.value)
         val entity = incidentRepository.findById(incidentId.value)
-            ?: return Either.Left(DiagnosisError.IncidentNotFound)
+            ?: return Either.Left(DiagnosisError.IncidentNotFound).also { log.error("Incident not found") }
 
         // Check for existing diagnosis
         val existing = diagnosisRepository.findByIncidentId(incidentId.value)
         if (existing != null) {
+            log.info("Found existing diagnosis, skipping AI call")
             return Either.Right(DiagnosisSuccess.ExistingDiagnosisFound(existing.toDomain()))
         }
 
         val incident = entity.toDomain()
         val profile = profileService.getProfile()
         
+        log.info("Retrieving context from RAG...")
         return retrievalService.retrieve(incident)
             .mapLeft { error ->
+                log.errorf("Retrieval failed: %s", error)
                 when (error) {
                     is RetrievalError.InvalidQuery -> DiagnosisError.LlmResponseInvalid("Invalid query")
                     is RetrievalError.ModelUnavailable -> DiagnosisError.LlmUnavailable
@@ -57,6 +63,7 @@ class IncidentDiagnosisService(
                 val incidentText = incident.toString()
                 val contextText = buildContextText(context)
 
+                log.info("Calling AI service for diagnosis...")
                 val raw = try {
                     aiService.proposeDiagnosis(
                         appName = profile.name,
@@ -66,14 +73,17 @@ class IncidentDiagnosisService(
                         context = contextText
                     )
                 } catch (e: Exception) {
+                    log.error("AI service call failed", e)
                     return@flatMap Either.Left(DiagnosisError.LlmUnavailable)
                 }
 
+                log.infof("AI Response received: %s", raw)
                 val llmResponse = try {
                     // Clean up potential markdown blocks if LLM included them
                     val cleanJson = raw.trim().removePrefix("```json").removeSuffix("```").trim()
                     objectMapper.readValue<LlmDiagnosisResponse>(cleanJson)
                 } catch (e: Exception) {
+                    log.error("Failed to parse AI response", e)
                     return@flatMap Either.Left(
                         DiagnosisError.LlmResponseInvalid("Failed to parse LLM response: ${e.message}")
                     )
@@ -93,6 +103,7 @@ class IncidentDiagnosisService(
                 entity.status = "DIAGNOSED:${diagnosisEntity.id}"
                 entity.updatedAt = Instant.now()
 
+                log.infof("Diagnosis %d created and linked to incident %d", diagnosisEntity.id, entity.id)
                 Either.Right(DiagnosisSuccess.NewDiagnosisGenerated(diagnosisEntity.toDomain()))
             }
     }

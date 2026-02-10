@@ -60,7 +60,7 @@ class IncidentEmbeddingRepository : PanacheRepository<IncidentEmbeddingEntity> {
 
         return listAll().mapNotNull { entity ->
             val incidentId = entity.incident?.id ?: return@mapNotNull null
-            val similarity = cosineSimilarity(queryVector, byteArrayToFloatArray(entity.embedding))
+            val similarity = cosineSimilarity(queryVector, vectorStringToFloatArray(entity.embedding))
             if (similarity >= minScore) {
                 SimilarIncidentResult(
                     id = requireNotNull(entity.id),
@@ -97,5 +97,13 @@ class IncidentEmbeddingRepository : PanacheRepository<IncidentEmbeddingEntity> {
             floatArray[i] = buffer.float
         }
         return floatArray
+    }
+
+    private fun vectorStringToFloatArray(vector: String): FloatArray {
+        if (vector.isBlank()) return FloatArray(0)
+        return vector.removePrefix("[").removeSuffix("]")
+            .split(",")
+            .map { it.trim().toFloat() }
+            .toFloatArray()
     }
 }

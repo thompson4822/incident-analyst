@@ -1,7 +1,6 @@
 package com.example.incidentanalyst.incident
 
 import com.example.incidentanalyst.home.DiagnosisStepViewModel
-import com.example.incidentanalyst.home.RunbookStepViewModel
 
 data class IncidentDetailViewModel(
     val id: Long,

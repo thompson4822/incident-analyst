@@ -19,6 +19,7 @@ import jakarta.ws.rs.Path
 import jakarta.ws.rs.PathParam
 import jakarta.ws.rs.Produces
 import jakarta.ws.rs.core.MediaType
+import java.time.Instant
 
 @Path("/")
 class HomeResource {
@@ -76,8 +77,8 @@ class HomeResource {
             uptime = 99.9,
             totalIncidents = total,
             activeIncidents = active,
-            diagnosedIncidents = diagnosed,
-            avgResolutionTime = "--"
+            recentDiagnoses = diagnosed,
+            meanResolutionTime = "--"
         )
         return statsTemplate.data("stats", model)
     }
@@ -137,14 +138,13 @@ class HomeResource {
     @io.smallrye.common.annotation.Blocking
     fun runbookSidebar(): TemplateInstance {
         val steps = listOf(
-            ResponseStepViewModel("Acknowledge incident", "Verify incident details and acknowledge", "completed", "success"),
-            ResponseStepViewModel("Assess impact", "Evaluate service impact and severity", "completed", "success"),
-            ResponseStepViewModel("Review diagnosis", "Check AI-generated diagnosis and root cause", "pending", "neutral"),
-            ResponseStepViewModel("Apply remediation", "Follow recommended remediation steps", "completed", "success"),
-            ResponseStepViewModel("Verify resolution", "Confirm system is operating normally", "pending", "neutral")
+            ResponseStepViewModel(1, "Acknowledge incident", "Verify incident details and acknowledge", "completed", "success", true),
+            ResponseStepViewModel(2, "Assess impact", "Evaluate service impact and severity", "completed", "success", true),
+            ResponseStepViewModel(3, "Review diagnosis", "Check AI-generated diagnosis and root cause", "pending", "neutral", false),
+            ResponseStepViewModel(4, "Apply remediation", "Follow recommended remediation steps", "completed", "success", true),
+            ResponseStepViewModel(5, "Verify resolution", "Confirm system is operating normally", "pending", "neutral", false)
         )
-        val model = ResponsePlanViewModel("Standard", steps)
-        return runbookSidebarTemplate.data("plan", model)
+        return runbookSidebarTemplate.data("steps", steps)
     }
 
     @POST
@@ -175,7 +175,7 @@ class HomeResource {
         severity = severity.name,
         severityColor = severity.toDaisyColor(),
         title = title,
-        description = description,
+        shortDescription = description.take(100),
         status = status.toDisplayString(),
         statusColor = status.toDaisyColor(),
         updatedAt = updatedAt.toRelativeTime(),

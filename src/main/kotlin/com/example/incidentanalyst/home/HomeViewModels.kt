@@ -5,8 +5,8 @@ data class DashboardStatsViewModel(
     val uptime: Double,
     val totalIncidents: Int,
     val activeIncidents: Int,
-    val diagnosedIncidents: Int,
-    val avgResolutionTime: String
+    val recentDiagnoses: Int,
+    val meanResolutionTime: String?
 )
 
 data class HomeIncidentItemViewModel(
@@ -15,7 +15,7 @@ data class HomeIncidentItemViewModel(
     val severity: String,
     val severityColor: String,
     val title: String,
-    val description: String,
+    val shortDescription: String,
     val status: String,
     val statusColor: String,
     val updatedAt: String,
@@ -46,10 +46,12 @@ data class DiagnosisStepViewModel(
 )
 
 data class ResponseStepViewModel(
+    val step: Int,
     val title: String,
     val description: String,
     val status: String,
-    val statusColor: String
+    val statusColor: String,
+    val completed: Boolean
 )
 
 data class ResponsePlanViewModel(

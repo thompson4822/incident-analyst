@@ -10,6 +10,7 @@ import dev.langchain4j.model.embedding.EmbeddingModel
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.inject.Inject
 import java.nio.ByteBuffer
+import org.jboss.logging.Logger
 
 private fun floatArrayToByteArray(floatArray: FloatArray): ByteArray {
     val buffer = ByteBuffer.allocate(floatArray.size * java.lang.Float.BYTES)
@@ -23,8 +24,10 @@ class RetrievalService @Inject constructor(
     private val incidentEmbeddingRepository: IncidentEmbeddingRepository,
     private val runbookEmbeddingRepository: RunbookEmbeddingRepository
 ) {
+    private val log = Logger.getLogger(javaClass)
 
     fun retrieve(incident: Incident): Either<RetrievalError, RetrievalContext> {
+        log.infof("Retrieving context for incident: %s", incident.title)
         if (incident.title.isBlank() && incident.description.isBlank()) {
             return Either.Left(RetrievalError.InvalidQuery)
         }
@@ -34,6 +37,7 @@ class RetrievalService @Inject constructor(
     }
 
     fun retrieveForRunbook(fragment: RunbookFragment): Either<RetrievalError, RetrievalContext> {
+        log.infof("Retrieving context for runbook: %s", fragment.title)
         if (fragment.title.isBlank() && fragment.content.isBlank()) {
             return Either.Left(RetrievalError.InvalidQuery)
         }
@@ -43,37 +47,46 @@ class RetrievalService @Inject constructor(
     }
 
     private fun performRetrieval(query: String): Either<RetrievalError, RetrievalContext> {
+        log.infof("Performing retrieval with query: %s", query)
         if (query.isBlank()) {
             return Either.Left(RetrievalError.InvalidQuery)
         }
 
         val queryEmbedding = try {
+            log.info("Generating embedding for query...")
             embeddingModel.embed(TextSegment.from(query)).content().vector()
         } catch (e: Exception) {
+            log.error("Failed to generate embedding", e)
             return Either.Left(RetrievalError.ModelUnavailable)
         }
 
         val queryEmbeddingBytes = floatArrayToByteArray(queryEmbedding)
 
         val similarIncidents = try {
+            log.info("Searching for similar incidents in DB...")
             incidentEmbeddingRepository.findSimilar(
                 queryEmbedding = queryEmbeddingBytes,
                 minScore = 0.6,
                 limit = 15
             )
         } catch (e: Exception) {
+            log.error("Database search for incidents failed", e)
             return Either.Left(RetrievalError.SearchFailed)
         }
 
         val similarRunbooks = try {
+            log.info("Searching for similar runbooks in DB...")
             runbookEmbeddingRepository.findSimilar(
                 queryEmbedding = queryEmbeddingBytes,
                 minScore = 0.6,
                 limit = 5
             )
         } catch (e: Exception) {
+            log.error("Database search for runbooks failed", e)
             return Either.Left(RetrievalError.SearchFailed)
         }
+
+        log.infof("Found %d similar incidents and %d similar runbooks", similarIncidents.size, similarRunbooks.size)
 
         val context = RetrievalContext(
             similarIncidents = similarIncidents.map {

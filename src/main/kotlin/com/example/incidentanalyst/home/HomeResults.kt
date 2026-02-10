@@ -2,10 +2,10 @@ package com.example.incidentanalyst.home
 
 sealed interface HomeResult {
     data class Success(
-        val stats: StatsViewModel,
-        val incidents: List<IncidentCardViewModel>,
+        val stats: DashboardStatsViewModel,
+        val incidents: List<HomeIncidentItemViewModel>,
         val activeIncident: ActiveIncidentViewModel?,
-        val runbookSteps: List<RunbookStepViewModel>
+        val runbookSteps: List<ResponseStepViewModel>
     ) : HomeResult
     data class Failure(val error: HomeError) : HomeResult
 }
