@@ -555,6 +555,35 @@ class DiagnosisResourceTest {
     }
 
     @Test
+    fun `POST verify triggers promotion logic`() {
+        // Arrange
+        val testId = 789L
+        val diagnosis = Diagnosis(
+            id = DiagnosisId(testId),
+            incidentId = IncidentId(10L),
+            rootCause = "Root cause",
+            steps = listOf("Step 1"),
+            confidence = Confidence.HIGH,
+            verification = DiagnosisVerification.VerifiedByHuman,
+            createdAt = Instant.now()
+        )
+        whenever(diagnosisServiceMock.verify(DiagnosisId(testId), "admin"))
+            .thenReturn(Either.Right(diagnosis))
+
+        // Act
+        given()
+            .contentType(ContentType.JSON)
+            .body("""{"verifiedBy": "admin"}""")
+            .`when`()
+            .post("/diagnoses/$testId/verify")
+            .then()
+            .statusCode(200)
+
+        // Assert
+        verify(diagnosisServiceMock).verify(eq(DiagnosisId(testId)), eq("admin"))
+    }
+
+    @Test
     fun `POST verify endpoint returns 400 for invalid negative ID`() {
         // Act & Assert
         given()

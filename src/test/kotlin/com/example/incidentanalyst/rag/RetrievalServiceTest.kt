@@ -646,6 +646,55 @@ class RetrievalServiceTest {
         assertEquals(SourceType.VERIFIED_DIAGNOSIS, match.sourceType)
     }
 
+    @Test
+    fun `retrieve applies boost to different source types correctly`() {
+        // Arrange
+        val incident = Incident(
+            id = IncidentId(1L),
+            source = "test",
+            title = "Test",
+            description = "Test",
+            severity = Severity.HIGH,
+            status = IncidentStatus.Open,
+            createdAt = testTimestamp,
+            updatedAt = testTimestamp
+        )
+        val queryEmbedding = createMockEmbedding()
+        
+        // Raw scores are the same, but source types differ
+        val similarIncidents = listOf(
+            SimilarIncidentResult(1, 10, "Raw", 0.8, "RAW_INCIDENT"),
+            SimilarIncidentResult(2, 20, "Verified", 0.8, "VERIFIED_DIAGNOSIS"),
+            SimilarIncidentResult(3, 30, "Resolved", 0.8, "RESOLVED_INCIDENT")
+        )
+
+        whenever(embeddingModel.embed(any<TextSegment>()))
+            .thenReturn(Response.from(Embedding.from(queryEmbedding)))
+        whenever(incidentEmbeddingRepository.findSimilar(any(), any(), any()))
+            .thenReturn(similarIncidents)
+        whenever(runbookEmbeddingRepository.findSimilar(any(), any(), any()))
+            .thenReturn(emptyList())
+
+        // Act
+        val result = retrievalService.retrieve(incident)
+
+        // Assert
+        assertTrue(result is Either.Right)
+        val context = (result as Either.Right).value
+        
+        // Resolved should be first (0.8 * 1.2 = 0.96)
+        assertEquals(IncidentId(30), context.similarIncidents[0].id)
+        assertEquals(0.96, context.similarIncidents[0].score.value, 0.001)
+        
+        // Verified should be second (0.8 * 1.1 = 0.88)
+        assertEquals(IncidentId(20), context.similarIncidents[1].id)
+        assertEquals(0.88, context.similarIncidents[1].score.value, 0.001)
+        
+        // Raw should be third (0.8 * 1.0 = 0.8)
+        assertEquals(IncidentId(10), context.similarIncidents[2].id)
+        assertEquals(0.8, context.similarIncidents[2].score.value, 0.001)
+    }
+
     private fun createMockEmbedding(): FloatArray {
         // Create a 768-dimensional mock embedding (matching nomic-embed-text dimensions)
         return FloatArray(768) { it.toFloat() / 768f }

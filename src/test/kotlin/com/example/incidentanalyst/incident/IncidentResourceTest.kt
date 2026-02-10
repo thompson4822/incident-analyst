@@ -386,4 +386,36 @@ class IncidentResourceTest {
             .then()
             .statusCode(200)
     }
+
+    @Test
+    fun `POST resolve triggers embedding promotion`() {
+        // Arrange
+        val testId = 456L
+        val resolutionText = "Fixed via restart"
+        val incident = Incident(
+            id = IncidentId(testId),
+            source = "test",
+            title = "Test",
+            description = "Test",
+            severity = Severity.HIGH,
+            status = IncidentStatus.Resolved,
+            createdAt = Instant.now(),
+            updatedAt = Instant.now(),
+            resolutionText = resolutionText
+        )
+        whenever(incidentService.resolve(IncidentId(testId), resolutionText))
+            .thenReturn(Either.Right(incident))
+
+        // Act
+        given()
+            .contentType(ContentType.URLENC)
+            .formParam("resolutionText", resolutionText)
+            .`when`()
+            .post("/incidents/$testId/resolve")
+            .then()
+            .statusCode(200)
+
+        // Assert
+        verify(incidentService).resolve(eq(IncidentId(testId)), eq(resolutionText))
+    }
 }
