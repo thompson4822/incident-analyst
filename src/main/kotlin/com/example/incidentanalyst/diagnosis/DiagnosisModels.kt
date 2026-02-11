@@ -21,6 +21,7 @@ data class Diagnosis(
     val incidentId: IncidentId,
     val rootCause: String,
     val steps: List<String>,
+    val structuredSteps: List<com.example.incidentanalyst.remediation.RemediationStep> = emptyList(),
     val confidence: Confidence,
     val verification: DiagnosisVerification,
     val createdAt: Instant,
@@ -48,6 +49,7 @@ fun DiagnosisEntity.toDomain(): Diagnosis =
         incidentId = IncidentId(requireNotNull(incident?.id)),
         rootCause = suggestedRootCause,
         steps = remediationSteps.split("\n").filter { it.isNotBlank() },
+        structuredSteps = emptyList(), // TODO: Parse from structuredSteps JSON
         confidence = Confidence.valueOf(confidence),
         verification = when (verification) {
             "VERIFIED" -> DiagnosisVerification.VerifiedByHuman
@@ -64,6 +66,7 @@ fun Diagnosis.toEntity(incidentEntity: IncidentEntity): DiagnosisEntity =
         incident = incidentEntity,
         suggestedRootCause = rootCause,
         remediationSteps = steps.joinToString("\n"),
+        structuredSteps = null, // TODO: Serialize structuredSteps to JSON
         confidence = confidence.name,
         verification = when (verification) {
             DiagnosisVerification.VerifiedByHuman -> "VERIFIED"

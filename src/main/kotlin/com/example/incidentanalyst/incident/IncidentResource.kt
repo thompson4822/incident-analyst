@@ -136,7 +136,9 @@ class IncidentResource(
                     icon = "check"
                 ))
                 
-                Response.ok(detailTemplate.data("incident", viewModel.copy(timeline = updatedTimeline))).build()
+                Response.ok(detailTemplate.data("incident", viewModel.copy(timeline = updatedTimeline)))
+                    .header("HX-Trigger", """{"show-toast": {"message": "Incident resolved and promoted to knowledge base", "type": "success"}}""")
+                    .build()
             }
         )
     }
@@ -210,7 +212,9 @@ class IncidentResource(
                     ifRight = {
                         val updatedIncident = incidentService.getById(incidentId).getOrNull()!!
                         val viewModel = mapToDetailViewModel(updatedIncident)
-                        Response.ok(detailTemplate.data("incident", viewModel)).build()
+                        Response.ok(detailTemplate.data("incident", viewModel))
+                            .header("HX-Trigger", """{"show-toast": {"message": "Diagnosis verified and promoted to RAG", "type": "success"}}""")
+                            .build()
                     }
                 )
             }

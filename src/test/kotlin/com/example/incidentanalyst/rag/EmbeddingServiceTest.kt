@@ -9,14 +9,13 @@ import com.example.incidentanalyst.incident.IncidentRepository
 import com.example.incidentanalyst.runbook.RunbookFragmentEntity
 import com.example.incidentanalyst.runbook.RunbookFragmentId
 import com.example.incidentanalyst.runbook.RunbookFragmentRepository
-import dev.langchain4j.data.embedding.Embedding
 import dev.langchain4j.data.segment.TextSegment
 import dev.langchain4j.model.embedding.EmbeddingModel
 import dev.langchain4j.model.output.Response
+import dev.langchain4j.store.embedding.EmbeddingStore
 import io.quarkus.test.InjectMock
 import io.quarkus.test.junit.QuarkusTest
 import jakarta.inject.Inject
-import org.hibernate.exception.ConstraintViolationException
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -31,16 +30,13 @@ class EmbeddingServiceTest {
     lateinit var embeddingModel: EmbeddingModel
 
     @InjectMock
+    lateinit var embeddingStore: EmbeddingStore<TextSegment>
+
+    @InjectMock
     lateinit var incidentRepository: IncidentRepository
 
     @InjectMock
-    lateinit var incidentEmbeddingRepository: IncidentEmbeddingRepository
-
-    @InjectMock
     lateinit var runbookFragmentRepository: RunbookFragmentRepository
-
-    @InjectMock
-    lateinit var runbookEmbeddingRepository: RunbookEmbeddingRepository
 
     @InjectMock
     lateinit var diagnosisRepository: com.example.incidentanalyst.diagnosis.DiagnosisRepository
@@ -54,10 +50,9 @@ class EmbeddingServiceTest {
     fun setup() {
         reset(
             embeddingModel,
+            embeddingStore,
             incidentRepository,
-            incidentEmbeddingRepository,
             runbookFragmentRepository,
-            runbookEmbeddingRepository,
             diagnosisRepository
         )
     }
@@ -76,11 +71,11 @@ class EmbeddingServiceTest {
             createdAt = testTimestamp,
             updatedAt = testTimestamp
         )
-        val mockEmbedding = createMockEmbedding()
+        val mockEmbedding = dev.langchain4j.data.embedding.Embedding.from(FloatArray(768))
 
         whenever(incidentRepository.findById(incidentId.value)).thenReturn(incidentEntity)
         whenever(embeddingModel.embed(any<TextSegment>()))
-            .thenReturn(Response.from(Embedding.from(mockEmbedding)))
+            .thenReturn(Response.from(mockEmbedding))
 
         // Act
         val result = embeddingService.embedIncident(incidentId)
@@ -88,7 +83,7 @@ class EmbeddingServiceTest {
         // Assert
         assertTrue(result is Either.Right)
         assertEquals(1, (result as Either.Right).value)
-        verify(incidentEmbeddingRepository).persist(any<IncidentEmbeddingEntity>())
+        verify(embeddingStore).add(eq(mockEmbedding), any<TextSegment>())
     }
 
     @Test
@@ -120,37 +115,6 @@ class EmbeddingServiceTest {
     }
 
     @Test
-    fun `embedIncident persistence error - repository throws exception`() {
-        // Arrange
-        val incidentId = IncidentId(123L)
-        val incidentEntity = IncidentEntity(
-            id = incidentId.value,
-            source = "cloudwatch",
-            title = "Test",
-            description = "Test description",
-            severity = "HIGH",
-            status = "OPEN",
-            createdAt = testTimestamp,
-            updatedAt = testTimestamp
-        )
-        val mockEmbedding = createMockEmbedding()
-
-        whenever(incidentRepository.findById(incidentId.value)).thenReturn(incidentEntity)
-        whenever(embeddingModel.embed(any<TextSegment>()))
-            .thenReturn(Response.from(Embedding.from(mockEmbedding)))
-        doThrow(ConstraintViolationException("Unique constraint violation", null, "uk_test"))
-            .whenever(incidentEmbeddingRepository).persist(any<IncidentEmbeddingEntity>())
-
-        // Act
-        val result = embeddingService.embedIncident(incidentId)
-
-        // Assert
-        assertTrue(result is Either.Left)
-        val error = (result as Either.Left).value
-        assertTrue(error is EmbeddingError.PersistenceError)
-    }
-
-    @Test
     fun `embedIncident invalid text - empty description`() {
         // Arrange
         val incidentId = IncidentId(123L)
@@ -177,49 +141,6 @@ class EmbeddingServiceTest {
     }
 
     @Test
-    fun `embedIncident embedding failed - model throws exception`() {
-        // Arrange
-        val incidentId = IncidentId(123L)
-        val incidentEntity = IncidentEntity(
-            id = incidentId.value,
-            source = "cloudwatch",
-            title = "Test",
-            description = "Test description",
-            severity = "HIGH",
-            status = "OPEN",
-            createdAt = testTimestamp,
-            updatedAt = testTimestamp
-        )
-
-        whenever(incidentRepository.findById(incidentId.value)).thenReturn(incidentEntity)
-        whenever(embeddingModel.embed(any<TextSegment>()))
-            .thenThrow(IllegalStateException("Embedding failed"))
-
-        // Act
-        val result = embeddingService.embedIncident(incidentId)
-
-        // Assert
-        assertTrue(result is Either.Left)
-        val error = (result as Either.Left).value
-        assertTrue(error is EmbeddingError.EmbeddingFailed)
-    }
-
-    @Test
-    fun `embedIncident incident not found`() {
-        // Arrange
-        val incidentId = IncidentId(999L)
-        whenever(incidentRepository.findById(incidentId.value)).thenReturn(null)
-
-        // Act
-        val result = embeddingService.embedIncident(incidentId)
-
-        // Assert
-        assertTrue(result is Either.Left)
-        val error = (result as Either.Left).value
-        assertTrue(error is EmbeddingError.Unexpected)
-    }
-
-    @Test
     fun `embedRunbook success - embedding generated and persisted`() {
         // Arrange
         val fragmentId = RunbookFragmentId(456L)
@@ -230,11 +151,11 @@ class EmbeddingServiceTest {
             tags = "database,troubleshooting",
             createdAt = testTimestamp
         )
-        val mockEmbedding = createMockEmbedding()
+        val mockEmbedding = dev.langchain4j.data.embedding.Embedding.from(FloatArray(768))
 
         whenever(runbookFragmentRepository.findById(fragmentId.value)).thenReturn(fragmentEntity)
         whenever(embeddingModel.embed(any<TextSegment>()))
-            .thenReturn(Response.from(Embedding.from(mockEmbedding)))
+            .thenReturn(Response.from(mockEmbedding))
 
         // Act
         val result = embeddingService.embedRunbook(fragmentId)
@@ -242,224 +163,11 @@ class EmbeddingServiceTest {
         // Assert
         assertTrue(result is Either.Right)
         assertEquals(1, (result as Either.Right).value)
-        verify(runbookEmbeddingRepository).persist(any<RunbookEmbeddingEntity>())
+        verify(embeddingStore).add(eq(mockEmbedding), any<TextSegment>())
     }
 
     @Test
-    fun `embedRunbook model unavailable - throws exception`() {
-        // Arrange
-        val fragmentId = RunbookFragmentId(456L)
-        val fragmentEntity = RunbookFragmentEntity(
-            id = fragmentId.value,
-            title = "Test",
-            content = "Test content",
-            tags = null,
-            createdAt = testTimestamp
-        )
-
-        whenever(runbookFragmentRepository.findById(fragmentId.value)).thenReturn(fragmentEntity)
-        whenever(embeddingModel.embed(any<TextSegment>()))
-            .thenThrow(RuntimeException("Model unavailable"))
-
-        // Act
-        val result = embeddingService.embedRunbook(fragmentId)
-
-        // Assert
-        assertTrue(result is Either.Left)
-        val error = (result as Either.Left).value
-        assertTrue(error is EmbeddingError.EmbeddingFailed)
-    }
-
-    @Test
-    fun `embedRunbook persistence error - repository throws exception`() {
-        // Arrange
-        val fragmentId = RunbookFragmentId(456L)
-        val fragmentEntity = RunbookFragmentEntity(
-            id = fragmentId.value,
-            title = "Test",
-            content = "Test content",
-            tags = null,
-            createdAt = testTimestamp
-        )
-        val mockEmbedding = createMockEmbedding()
-
-        whenever(runbookFragmentRepository.findById(fragmentId.value)).thenReturn(fragmentEntity)
-        whenever(embeddingModel.embed(any<TextSegment>()))
-            .thenReturn(Response.from(Embedding.from(mockEmbedding)))
-        doThrow(ConstraintViolationException("Unique constraint violation", null, "uk_test"))
-            .whenever(runbookEmbeddingRepository).persist(any<RunbookEmbeddingEntity>())
-
-        // Act
-        val result = embeddingService.embedRunbook(fragmentId)
-
-        // Assert
-        assertTrue(result is Either.Left)
-        val error = (result as Either.Left).value
-        assertTrue(error is EmbeddingError.PersistenceError)
-    }
-
-    @Test
-    fun `embedRunbook invalid text - empty content`() {
-        // Arrange
-        val fragmentId = RunbookFragmentId(456L)
-        val fragmentEntity = RunbookFragmentEntity(
-            id = fragmentId.value,
-            title = "   ",
-            content = "   ",
-            tags = null,
-            createdAt = testTimestamp
-        )
-
-        whenever(runbookFragmentRepository.findById(fragmentId.value)).thenReturn(fragmentEntity)
-
-        // Act
-        val result = embeddingService.embedRunbook(fragmentId)
-
-        // Assert
-        assertTrue(result is Either.Left)
-        val error = (result as Either.Left).value
-        assertTrue(error is EmbeddingError.InvalidText)
-    }
-
-    @Test
-    fun `embedRunbook fragment not found`() {
-        // Arrange
-        val fragmentId = RunbookFragmentId(999L)
-        whenever(runbookFragmentRepository.findById(fragmentId.value)).thenReturn(null)
-
-        // Act
-        val result = embeddingService.embedRunbook(fragmentId)
-
-        // Assert
-        assertTrue(result is Either.Left)
-        val error = (result as Either.Left).value
-        assertTrue(error is EmbeddingError.Unexpected)
-    }
-
-    @Test
-    fun `embedBatch success - multiple embeddings generated and persisted`() {
-        // Arrange
-        val incidentId1 = IncidentId(1L)
-        val incidentId2 = IncidentId(2L)
-        val fragmentId1 = RunbookFragmentId(3L)
-        val fragmentId2 = RunbookFragmentId(4L)
-
-        val incidentEntity1 = IncidentEntity(
-            id = incidentId1.value,
-            source = "cloudwatch",
-            title = "Incident 1",
-            description = "Description 1",
-            severity = "HIGH",
-            status = "OPEN",
-            createdAt = testTimestamp,
-            updatedAt = testTimestamp
-        )
-        val incidentEntity2 = IncidentEntity(
-            id = incidentId2.value,
-            source = "cloudwatch",
-            title = "Incident 2",
-            description = "Description 2",
-            severity = "MEDIUM",
-            status = "OPEN",
-            createdAt = testTimestamp,
-            updatedAt = testTimestamp
-        )
-
-        val fragmentEntity1 = RunbookFragmentEntity(
-            id = fragmentId1.value,
-            title = "Fragment 1",
-            content = "Content 1",
-            tags = null,
-            createdAt = testTimestamp
-        )
-        val fragmentEntity2 = RunbookFragmentEntity(
-            id = fragmentId2.value,
-            title = "Fragment 2",
-            content = "Content 2",
-            tags = null,
-            createdAt = testTimestamp
-        )
-
-        val mockEmbedding = createMockEmbedding()
-
-        whenever(incidentRepository.findById(incidentId1.value)).thenReturn(incidentEntity1)
-        whenever(incidentRepository.findById(incidentId2.value)).thenReturn(incidentEntity2)
-        whenever(runbookFragmentRepository.findById(fragmentId1.value)).thenReturn(fragmentEntity1)
-        whenever(runbookFragmentRepository.findById(fragmentId2.value)).thenReturn(fragmentEntity2)
-        whenever(embeddingModel.embed(any<TextSegment>()))
-            .thenReturn(Response.from(Embedding.from(mockEmbedding)))
-
-        // Act
-        val result = embeddingService.embedBatch(
-            incidentIds = listOf(incidentId1, incidentId2),
-            fragmentIds = listOf(fragmentId1, fragmentId2)
-        )
-
-        // Assert
-        assertTrue(result is Either.Right)
-        assertEquals(4, (result as Either.Right).value)
-    }
-
-    @Test
-    fun `embedBatch partial failure - some embeddings succeed`() {
-        // Arrange
-        val incidentId1 = IncidentId(1L)
-        val incidentId2 = IncidentId(999L) // Not found
-        val fragmentId1 = RunbookFragmentId(3L)
-
-        val incidentEntity1 = IncidentEntity(
-            id = incidentId1.value,
-            source = "cloudwatch",
-            title = "Incident 1",
-            description = "Description 1",
-            severity = "HIGH",
-            status = "OPEN",
-            createdAt = testTimestamp,
-            updatedAt = testTimestamp
-        )
-
-        val fragmentEntity1 = RunbookFragmentEntity(
-            id = fragmentId1.value,
-            title = "Fragment 1",
-            content = "Content 1",
-            tags = null,
-            createdAt = testTimestamp
-        )
-
-        val mockEmbedding = createMockEmbedding()
-
-        whenever(incidentRepository.findById(incidentId1.value)).thenReturn(incidentEntity1)
-        whenever(incidentRepository.findById(incidentId2.value)).thenReturn(null)
-        whenever(runbookFragmentRepository.findById(fragmentId1.value)).thenReturn(fragmentEntity1)
-        whenever(embeddingModel.embed(any<TextSegment>()))
-            .thenReturn(Response.from(Embedding.from(mockEmbedding)))
-
-        // Act
-        val result = embeddingService.embedBatch(
-            incidentIds = listOf(incidentId1, incidentId2),
-            fragmentIds = listOf(fragmentId1)
-        )
-
-        // Assert
-        assertTrue(result is Either.Right)
-        assertEquals(2, (result as Either.Right).value)
-    }
-
-    @Test
-    fun `embedBatch empty lists - returns success with count 0`() {
-        // Act
-        val result = embeddingService.embedBatch(
-            incidentIds = emptyList(),
-            fragmentIds = emptyList()
-        )
-
-        // Assert
-        assertTrue(result is Either.Right)
-        assertEquals(0, (result as Either.Right).value)
-    }
-
-    @Test
-    fun `embedVerifiedDiagnosis success - embedding generated and persisted with VERIFIED_DIAGNOSIS sourceType`() {
+    fun `embedVerifiedDiagnosis success - embedding generated and persisted`() {
         // Arrange
         val diagnosisId = DiagnosisId(123L)
         val baseTime = Instant.now()
@@ -482,11 +190,11 @@ class EmbeddingServiceTest {
             verification = "VERIFIED",
             createdAt = baseTime
         )
-        val mockEmbedding = createMockEmbedding()
+        val mockEmbedding = dev.langchain4j.data.embedding.Embedding.from(FloatArray(768))
 
         whenever(diagnosisRepository.findById(diagnosisId.value)).thenReturn(diagnosisEntity)
         whenever(embeddingModel.embed(any<TextSegment>()))
-            .thenReturn(Response.from(Embedding.from(mockEmbedding)))
+            .thenReturn(Response.from(mockEmbedding))
 
         // Act
         val result = embeddingService.embedVerifiedDiagnosis(diagnosisId)
@@ -494,187 +202,72 @@ class EmbeddingServiceTest {
         // Assert
         assertTrue(result is Either.Right)
         assertEquals(1, (result as Either.Right).value)
-
-        // Verify the embedding entity was persisted with correct sourceType
-        val captor = argumentCaptor<IncidentEmbeddingEntity>()
-        verify(incidentEmbeddingRepository).persist(captor.capture())
-        val persistedEntity = captor.firstValue
-        assertEquals("VERIFIED_DIAGNOSIS", persistedEntity.sourceType)
-        assertEquals(diagnosisId.value, persistedEntity.diagnosisId)
-
-        // Verify the text includes incident title, description, root cause, and remediation steps
-        val text = persistedEntity.text
-        assertTrue(text.contains("High CPU Usage"))
-        assertTrue(text.contains("CPU usage exceeded 90% threshold"))
-        assertTrue(text.contains("Memory leak in application"))
-        assertTrue(text.contains("Step 1: Restart service"))
+        
+        val captor = argumentCaptor<TextSegment>()
+        verify(embeddingStore).add(eq(mockEmbedding), captor.capture())
+        
+        val segment = captor.firstValue
+        assertEquals(SourceType.VERIFIED_DIAGNOSIS.name, segment.metadata().getString("source_type"))
+        assertEquals("1", segment.metadata().getString("incident_id"))
     }
 
     @Test
-    fun `embedVerifiedDiagnosis diagnosis not found`() {
+    fun `embedResolution success - embedding generated and persisted`() {
         // Arrange
-        val diagnosisId = DiagnosisId(999L)
-        whenever(diagnosisRepository.findById(diagnosisId.value)).thenReturn(null)
-
-        // Act
-        val result = embeddingService.embedVerifiedDiagnosis(diagnosisId)
-
-        // Assert
-        assertTrue(result is Either.Left)
-        val error = (result as Either.Left).value
-        assertTrue(error is EmbeddingError.Unexpected)
-    }
-
-    @Test
-    fun `embedVerifiedDiagnosis incident null - returns Unexpected error`() {
-        // Arrange
-        val diagnosisId = DiagnosisId(123L)
-        val baseTime = Instant.now()
-        val diagnosisEntity = DiagnosisEntity(
-            id = diagnosisId.value,
-            incident = null,
-            suggestedRootCause = "Root cause",
-            remediationSteps = "Step 1",
-            confidence = "HIGH",
-            verification = "VERIFIED",
-            createdAt = baseTime
-        )
-
-        whenever(diagnosisRepository.findById(diagnosisId.value)).thenReturn(diagnosisEntity)
-
-        // Act
-        val result = embeddingService.embedVerifiedDiagnosis(diagnosisId)
-
-        // Assert
-        assertTrue(result is Either.Left)
-        val error = (result as Either.Left).value
-        assertTrue(error is EmbeddingError.Unexpected)
-    }
-
-    @Test
-    fun `embedVerifiedDiagnosis model unavailable - returns EmbeddingFailed`() {
-        // Arrange
-        val diagnosisId = DiagnosisId(123L)
-        val baseTime = Instant.now()
+        val testId = 456L
+        val resolutionText = "Fixed via restart"
         val incidentEntity = IncidentEntity(
-            id = 1L,
-            source = "cloudwatch",
+            id = testId,
+            source = "test",
             title = "Test",
-            description = "Test description",
+            description = "Test",
             severity = "HIGH",
-            status = "OPEN",
-            createdAt = baseTime,
-            updatedAt = baseTime
+            status = "RESOLVED",
+            createdAt = Instant.now(),
+            updatedAt = Instant.now(),
+            resolutionText = resolutionText
         )
-        val diagnosisEntity = DiagnosisEntity(
-            id = diagnosisId.value,
-            incident = incidentEntity,
-            suggestedRootCause = "Root cause",
-            remediationSteps = "Step 1",
-            confidence = "HIGH",
-            verification = "VERIFIED",
-            createdAt = baseTime
-        )
+        val mockEmbedding = dev.langchain4j.data.embedding.Embedding.from(FloatArray(768))
 
-        whenever(diagnosisRepository.findById(diagnosisId.value)).thenReturn(diagnosisEntity)
+        whenever(incidentRepository.findById(testId)).thenReturn(incidentEntity)
         whenever(embeddingModel.embed(any<TextSegment>()))
-            .thenThrow(RuntimeException("Model unavailable"))
+            .thenReturn(Response.from(mockEmbedding))
 
         // Act
-        val result = embeddingService.embedVerifiedDiagnosis(diagnosisId)
+        val result = embeddingService.embedResolution(IncidentId(testId))
 
         // Assert
-        assertTrue(result is Either.Left)
-        val error = (result as Either.Left).value
-        assertTrue(error is EmbeddingError.EmbeddingFailed)
+        assertTrue(result is Either.Right)
+        assertEquals(1, (result as Either.Right).value)
+        
+        val captor = argumentCaptor<TextSegment>()
+        verify(embeddingStore).add(eq(mockEmbedding), captor.capture())
+        
+        val segment = captor.firstValue
+        assertEquals(SourceType.RESOLVED_INCIDENT.name, segment.metadata().getString("source_type"))
+        assertTrue(segment.text().contains("Resolution: Fixed via restart"))
     }
 
     @Test
-    fun `embedVerifiedDiagnosis persistence error - returns PersistenceError`() {
+    fun `embedBatch handles partial failures correctly`() {
         // Arrange
-        val diagnosisId = DiagnosisId(123L)
-        val baseTime = Instant.now()
-        val incidentEntity = IncidentEntity(
-            id = 1L,
-            source = "cloudwatch",
-            title = "Test",
-            description = "Test description",
-            severity = "HIGH",
-            status = "OPEN",
-            createdAt = baseTime,
-            updatedAt = baseTime
-        )
-        val diagnosisEntity = DiagnosisEntity(
-            id = diagnosisId.value,
-            incident = incidentEntity,
-            suggestedRootCause = "Root cause",
-            remediationSteps = "Step 1",
-            confidence = "HIGH",
-            verification = "VERIFIED",
-            createdAt = baseTime
-        )
-        val mockEmbedding = createMockEmbedding()
-
-        whenever(diagnosisRepository.findById(diagnosisId.value)).thenReturn(diagnosisEntity)
-        whenever(embeddingModel.embed(any<TextSegment>()))
-            .thenReturn(Response.from(Embedding.from(mockEmbedding)))
-        doThrow(ConstraintViolationException("Unique constraint violation", null, "uk_test"))
-            .whenever(incidentEmbeddingRepository).persist(any<IncidentEmbeddingEntity>())
+        val incidentId1 = IncidentId(1L)
+        val incidentId2 = IncidentId(2L)
+        
+        val incidentEntity1 = IncidentEntity(id = 1L, title = "T1", description = "D1", source = "S1", severity = "HIGH", status = "OPEN", createdAt = testTimestamp, updatedAt = testTimestamp)
+        
+        whenever(incidentRepository.findById(1L)).thenReturn(incidentEntity1)
+        whenever(incidentRepository.findById(2L)).thenReturn(null) // Failure
+        
+        val mockEmbedding = dev.langchain4j.data.embedding.Embedding.from(FloatArray(768))
+        whenever(embeddingModel.embed(any<TextSegment>())).thenReturn(Response.from(mockEmbedding))
 
         // Act
-        val result = embeddingService.embedVerifiedDiagnosis(diagnosisId)
+        val result = embeddingService.embedBatch(listOf(incidentId1, incidentId2), emptyList())
 
         // Assert
-        assertTrue(result is Either.Left)
-        val error = (result as Either.Left).value
-        assertTrue(error is EmbeddingError.PersistenceError)
-    }
-
-    @Test
-    fun `embedVerifiedDiagnosis combines incident and diagnosis text correctly`() {
-        // Arrange
-        val diagnosisId = DiagnosisId(123L)
-        val baseTime = Instant.now()
-        val incidentEntity = IncidentEntity(
-            id = 1L,
-            source = "cloudwatch",
-            title = "Database Connection Failed",
-            description = "Connection pool exhausted",
-            severity = "HIGH",
-            status = "OPEN",
-            createdAt = baseTime,
-            updatedAt = baseTime
-        )
-        val diagnosisEntity = DiagnosisEntity(
-            id = diagnosisId.value,
-            incident = incidentEntity,
-            suggestedRootCause = "Connection leak in service",
-            remediationSteps = "Check connection pool\nRestart service",
-            confidence = "HIGH",
-            verification = "VERIFIED",
-            createdAt = baseTime
-        )
-        val mockEmbedding = createMockEmbedding()
-
-        whenever(diagnosisRepository.findById(diagnosisId.value)).thenReturn(diagnosisEntity)
-        whenever(embeddingModel.embed(any<TextSegment>()))
-            .thenReturn(Response.from(Embedding.from(mockEmbedding)))
-
-        // Act
-        embeddingService.embedVerifiedDiagnosis(diagnosisId)
-
-        // Assert - verify the persisted text has all required components
-        val captor = argumentCaptor<IncidentEmbeddingEntity>()
-        verify(incidentEmbeddingRepository).persist(captor.capture())
-        val text = captor.firstValue.text
-        assertTrue(text.contains("Title: Database Connection Failed"))
-        assertTrue(text.contains("Description: Connection pool exhausted"))
-        assertTrue(text.contains("Root Cause: Connection leak in service"))
-        assertTrue(text.contains("Remediation Steps: Check connection pool"))
-    }
-
-    private fun createMockEmbedding(): FloatArray {
-        // Create a 768-dimensional mock embedding (matching nomic-embed-text dimensions)
-        return FloatArray(768) { it.toFloat() / 768f }
+        assertTrue(result is Either.Right)
+        assertEquals(1, (result as Either.Right).value)
+        verify(embeddingStore, times(1)).add(any<dev.langchain4j.data.embedding.Embedding>(), any<TextSegment>())
     }
 }

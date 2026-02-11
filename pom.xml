@@ -16,7 +16,7 @@
     <quarkus.langchain4j.version>0.11.0</quarkus.langchain4j.version>
     <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
     <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-    <quarkus.platform.version>3.3.0</quarkus.platform.version>
+    <quarkus.platform.version>3.8.2</quarkus.platform.version>
     <jacoco.version>0.8.11</jacoco.version>
   </properties>
   <dependencyManagement>
@@ -113,7 +113,7 @@
     <dependency>
       <groupId>io.quarkiverse.amazonservices</groupId>
       <artifactId>quarkus-amazon-cloudwatch</artifactId>
-      <version>2.16.0</version>
+      <version>2.18.0</version>
     </dependency>
     <dependency>
       <groupId>software.amazon.awssdk</groupId>

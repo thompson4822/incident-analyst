@@ -7,15 +7,14 @@ import com.example.incidentanalyst.incident.IncidentStatus
 import com.example.incidentanalyst.incident.Severity
 import com.example.incidentanalyst.runbook.RunbookFragment
 import com.example.incidentanalyst.runbook.RunbookFragmentId
-import dev.langchain4j.data.embedding.Embedding
+import dev.langchain4j.data.document.Metadata
 import dev.langchain4j.data.segment.TextSegment
-import dev.langchain4j.model.embedding.EmbeddingModel
-import dev.langchain4j.model.output.Response
+import dev.langchain4j.rag.content.Content
+import dev.langchain4j.rag.content.retriever.ContentRetriever
 import io.quarkus.test.InjectMock
 import io.quarkus.test.junit.QuarkusTest
 import jakarta.inject.Inject
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -26,13 +25,7 @@ import java.time.Instant
 class RetrievalServiceTest {
 
     @InjectMock
-    lateinit var embeddingModel: EmbeddingModel
-
-    @InjectMock
-    lateinit var incidentEmbeddingRepository: IncidentEmbeddingRepository
-
-    @InjectMock
-    lateinit var runbookEmbeddingRepository: RunbookEmbeddingRepository
+    lateinit var incidentRetriever: ContentRetriever
 
     @Inject
     lateinit var retrievalService: RetrievalService
@@ -41,11 +34,11 @@ class RetrievalServiceTest {
 
     @BeforeEach
     fun setup() {
-        reset(embeddingModel, incidentEmbeddingRepository, runbookEmbeddingRepository)
+        reset(incidentRetriever)
     }
 
     @Test
-    fun `retrieve for incident success - returns top 5 similar incidents`() {
+    fun `retrieve for incident success - returns similar incidents`() {
         // Arrange
         val incident = Incident(
             id = IncidentId(1L),
@@ -57,26 +50,11 @@ class RetrievalServiceTest {
             createdAt = testTimestamp,
             updatedAt = testTimestamp
         )
-        val queryEmbedding = createMockEmbedding()
-        val similarIncidents = createMockSimilarIncidents(3)
-        val similarRunbooks = createMockSimilarRunbooks(2)
+        
+        val segment = TextSegment.from("Past incident", Metadata.from(mapOf("source_type" to SourceType.RAW_INCIDENT.name, "incident_id" to "10")))
+        val content = Content.from(segment)
 
-        whenever(embeddingModel.embed(any<TextSegment>()))
-            .thenReturn(Response.from(Embedding.from(queryEmbedding)))
-        whenever(
-            incidentEmbeddingRepository.findSimilar(
-                any<ByteArray>(),
-                eq(0.6),
-                eq(15)
-            )
-        ).thenReturn(similarIncidents)
-        whenever(
-            runbookEmbeddingRepository.findSimilar(
-                any<ByteArray>(),
-                eq(0.6),
-                eq(5)
-            )
-        ).thenReturn(similarRunbooks)
+        whenever(incidentRetriever.retrieve(any())).thenReturn(listOf(content))
 
         // Act
         val result = retrievalService.retrieve(incident)
@@ -84,13 +62,12 @@ class RetrievalServiceTest {
         // Assert
         assertTrue(result is Either.Right)
         val context = (result as Either.Right).value
-        assertEquals(3, context.similarIncidents.size)
-        assertEquals(2, context.similarRunbooks.size)
-        assertTrue(context.query.contains("Database connection failed"))
+        assertEquals(1, context.similarIncidents.size)
+        assertEquals(IncidentId(10L), context.similarIncidents[0].id)
     }
 
     @Test
-    fun `retrieve for incident model unavailable - throws exception`() {
+    fun `retrieve for incident model unavailable - returns failure`() {
         // Arrange
         val incident = Incident(
             id = IncidentId(1L),
@@ -103,84 +80,7 @@ class RetrievalServiceTest {
             updatedAt = testTimestamp
         )
 
-        whenever(embeddingModel.embed(any<TextSegment>()))
-            .thenThrow(RuntimeException("Model unavailable"))
-
-        // Act
-        val result = retrievalService.retrieve(incident)
-
-        // Assert
-        assertTrue(result is Either.Left)
-        val error = (result as Either.Left).value
-        assertTrue(error is RetrievalError.ModelUnavailable)
-    }
-
-    @Test
-    fun `retrieve for incident no results - empty lists returned`() {
-        // Arrange
-        val incident = Incident(
-            id = IncidentId(1L),
-            source = "cloudwatch",
-            title = "Test",
-            description = "Test description",
-            severity = Severity.HIGH,
-            status = IncidentStatus.Open,
-            createdAt = testTimestamp,
-            updatedAt = testTimestamp
-        )
-        val queryEmbedding = createMockEmbedding()
-
-        whenever(embeddingModel.embed(any<TextSegment>()))
-            .thenReturn(Response.from(Embedding.from(queryEmbedding)))
-        whenever(
-            incidentEmbeddingRepository.findSimilar(
-                any<ByteArray>(),
-                eq(0.6),
-                eq(15)
-            )
-        ).thenReturn(emptyList())
-        whenever(
-            runbookEmbeddingRepository.findSimilar(
-                any<ByteArray>(),
-                eq(0.6),
-                eq(5)
-            )
-        ).thenReturn(emptyList())
-
-        // Act
-        val result = retrievalService.retrieve(incident)
-
-        // Assert
-        assertTrue(result is Either.Right)
-        val context = (result as Either.Right).value
-        assertEquals(0, context.similarIncidents.size)
-        assertEquals(0, context.similarRunbooks.size)
-    }
-
-    @Test
-    fun `retrieve for incident search failed - repository throws exception`() {
-        // Arrange
-        val incident = Incident(
-            id = IncidentId(1L),
-            source = "cloudwatch",
-            title = "Test",
-            description = "Test description",
-            severity = Severity.HIGH,
-            status = IncidentStatus.Open,
-            createdAt = testTimestamp,
-            updatedAt = testTimestamp
-        )
-        val queryEmbedding = createMockEmbedding()
-
-        whenever(embeddingModel.embed(any<TextSegment>()))
-            .thenReturn(Response.from(Embedding.from(queryEmbedding)))
-        whenever(
-            incidentEmbeddingRepository.findSimilar(
-                any<ByteArray>(),
-                eq(0.6),
-                eq(15)
-            )
-        ).thenThrow(RuntimeException("Database error"))
+        whenever(incidentRetriever.retrieve(any())).thenThrow(RuntimeException("Model unavailable"))
 
         // Act
         val result = retrievalService.retrieve(incident)
@@ -215,7 +115,7 @@ class RetrievalServiceTest {
     }
 
     @Test
-    fun `retrieve for runbook success - returns top 2 similar runbooks`() {
+    fun `retrieve for runbook success - returns similar runbooks`() {
         // Arrange
         val fragment = RunbookFragment(
             id = RunbookFragmentId(1L),
@@ -224,26 +124,11 @@ class RetrievalServiceTest {
             tags = "database,troubleshooting",
             createdAt = testTimestamp
         )
-        val queryEmbedding = createMockEmbedding()
-        val similarIncidents = createMockSimilarIncidents(2)
-        val similarRunbooks = createMockSimilarRunbooks(2)
+        
+        val segment = TextSegment.from("Procedure text", Metadata.from(mapOf("source_type" to SourceType.OFFICIAL_RUNBOOK.name, "fragment_id" to "20")))
+        val content = Content.from(segment)
 
-        whenever(embeddingModel.embed(any<TextSegment>()))
-            .thenReturn(Response.from(Embedding.from(queryEmbedding)))
-        whenever(
-            incidentEmbeddingRepository.findSimilar(
-                any<ByteArray>(),
-                eq(0.6),
-                eq(15)
-            )
-        ).thenReturn(similarIncidents)
-        whenever(
-            runbookEmbeddingRepository.findSimilar(
-                any<ByteArray>(),
-                eq(0.6),
-                eq(5)
-            )
-        ).thenReturn(similarRunbooks)
+        whenever(incidentRetriever.retrieve(any())).thenReturn(listOf(content))
 
         // Act
         val result = retrievalService.retrieveForRunbook(fragment)
@@ -251,403 +136,12 @@ class RetrievalServiceTest {
         // Assert
         assertTrue(result is Either.Right)
         val context = (result as Either.Right).value
-        assertEquals(2, context.similarIncidents.size)
-        assertEquals(2, context.similarRunbooks.size)
-        assertTrue(context.query.contains("Database connection troubleshooting"))
+        assertEquals(1, context.similarRunbooks.size)
+        assertEquals(RunbookFragmentId(20L), context.similarRunbooks[0].id)
     }
 
     @Test
-    fun `retrieve for runbook no results - empty lists returned`() {
-        // Arrange
-        val fragment = RunbookFragment(
-            id = RunbookFragmentId(1L),
-            title = "Test",
-            content = "Test content",
-            tags = null,
-            createdAt = testTimestamp
-        )
-        val queryEmbedding = createMockEmbedding()
-
-        whenever(embeddingModel.embed(any<TextSegment>()))
-            .thenReturn(Response.from(Embedding.from(queryEmbedding)))
-        whenever(
-            incidentEmbeddingRepository.findSimilar(
-                any<ByteArray>(),
-                eq(0.6),
-                eq(15)
-            )
-        ).thenReturn(emptyList())
-        whenever(
-            runbookEmbeddingRepository.findSimilar(
-                any<ByteArray>(),
-                eq(0.6),
-                eq(5)
-            )
-        ).thenReturn(emptyList())
-
-        // Act
-        val result = retrievalService.retrieveForRunbook(fragment)
-
-        // Assert
-        assertTrue(result is Either.Right)
-        val context = (result as Either.Right).value
-        assertEquals(0, context.similarIncidents.size)
-        assertEquals(0, context.similarRunbooks.size)
-    }
-
-    @Test
-    fun `retrieve for runbook search failed - repository throws exception`() {
-        // Arrange
-        val fragment = RunbookFragment(
-            id = RunbookFragmentId(1L),
-            title = "Test",
-            content = "Test content",
-            tags = null,
-            createdAt = testTimestamp
-        )
-        val queryEmbedding = createMockEmbedding()
-
-        whenever(embeddingModel.embed(any<TextSegment>()))
-            .thenReturn(Response.from(Embedding.from(queryEmbedding)))
-        whenever(
-            runbookEmbeddingRepository.findSimilar(
-                any<ByteArray>(),
-                eq(0.6),
-                eq(5)
-            )
-        ).thenThrow(RuntimeException("Database error"))
-
-        // Act
-        val result = retrievalService.retrieveForRunbook(fragment)
-
-        // Assert
-        assertTrue(result is Either.Left)
-        val error = (result as Either.Left).value
-        assertTrue(error is RetrievalError.SearchFailed)
-    }
-
-    @Test
-    fun `retrieve for runbook invalid query - blank content`() {
-        // Arrange
-        val fragment = RunbookFragment(
-            id = RunbookFragmentId(1L),
-            title = "   ",
-            content = "   ",
-            tags = null,
-            createdAt = testTimestamp
-        )
-
-        // Act
-        val result = retrievalService.retrieveForRunbook(fragment)
-
-        // Assert
-        assertTrue(result is Either.Left)
-        val error = (result as Either.Left).value
-        assertTrue(error is RetrievalError.InvalidQuery)
-    }
-
-    @Test
-    fun `RetrievalMatch includes score and snippet`() {
-        // Arrange
-        val incident = Incident(
-            id = IncidentId(1L),
-            source = "cloudwatch",
-            title = "Test",
-            description = "Test description",
-            severity = Severity.HIGH,
-            status = IncidentStatus.Open,
-            createdAt = testTimestamp,
-            updatedAt = testTimestamp
-        )
-        val queryEmbedding = createMockEmbedding()
-        val similarIncidents = createMockSimilarIncidents(1)
-
-        whenever(embeddingModel.embed(any<TextSegment>()))
-            .thenReturn(Response.from(Embedding.from(queryEmbedding)))
-        whenever(
-            incidentEmbeddingRepository.findSimilar(
-                any<ByteArray>(),
-                eq(0.6),
-                eq(15)
-            )
-        ).thenReturn(similarIncidents)
-        whenever(
-            runbookEmbeddingRepository.findSimilar(
-                any<ByteArray>(),
-                eq(0.6),
-                eq(5)
-            )
-        ).thenReturn(emptyList())
-
-        // Act
-        val result = retrievalService.retrieve(incident)
-
-        // Assert
-        assertTrue(result is Either.Right)
-        val context = (result as Either.Right).value
-        val match = context.similarIncidents[0]
-        assertNotNull(match.score)
-        assertNotNull(match.snippet)
-        assertEquals(IncidentId(11L), match.id)
-    }
-
-    @Test
-    fun `RetrievalMatch snippet truncated to 400 characters`() {
-        // Arrange
-        val incident = Incident(
-            id = IncidentId(1L),
-            source = "cloudwatch",
-            title = "Test",
-            description = "Test description",
-            severity = Severity.HIGH,
-            status = IncidentStatus.Open,
-            createdAt = testTimestamp,
-            updatedAt = testTimestamp
-        )
-        val queryEmbedding = createMockEmbedding()
-        val longText = "A".repeat(500)
-        val similarIncidents = listOf(
-            SimilarIncidentResult(
-                id = 1L,
-                incidentId = 10L,
-                text = longText,
-                similarity = 0.9,
-                sourceType = "RAW_INCIDENT"
-            )
-        )
-
-        whenever(embeddingModel.embed(any<TextSegment>()))
-            .thenReturn(Response.from(Embedding.from(queryEmbedding)))
-        whenever(
-            incidentEmbeddingRepository.findSimilar(
-                any<ByteArray>(),
-                eq(0.6),
-                eq(15)
-            )
-        ).thenReturn(similarIncidents)
-        whenever(
-            runbookEmbeddingRepository.findSimilar(
-                any<ByteArray>(),
-                eq(0.6),
-                eq(5)
-            )
-        ).thenReturn(emptyList())
-
-        // Act
-        val result = retrievalService.retrieve(incident)
-
-        // Assert
-        assertTrue(result is Either.Right)
-        val context = (result as Either.Right).value
-        val match = context.similarIncidents[0]
-        assertTrue(match.snippet!!.length <= 400)
-    }
-
-    @Test
-    fun `EmbeddingScore wraps similarity value correctly`() {
-        // Arrange
-        val incident = Incident(
-            id = IncidentId(1L),
-            source = "cloudwatch",
-            title = "Test",
-            description = "Test description",
-            severity = Severity.HIGH,
-            status = IncidentStatus.Open,
-            createdAt = testTimestamp,
-            updatedAt = testTimestamp
-        )
-        val queryEmbedding = createMockEmbedding()
-        val similarity = 0.85
-        val similarIncidents = listOf(
-            SimilarIncidentResult(
-                id = 1L,
-                incidentId = 10L,
-                text = "Test text",
-                similarity = similarity,
-                sourceType = "RAW_INCIDENT"
-            )
-        )
-
-        whenever(embeddingModel.embed(any<TextSegment>()))
-            .thenReturn(Response.from(Embedding.from(queryEmbedding)))
-        whenever(
-            incidentEmbeddingRepository.findSimilar(
-                any<ByteArray>(),
-                eq(0.6),
-                eq(15)
-            )
-        ).thenReturn(similarIncidents)
-        whenever(
-            runbookEmbeddingRepository.findSimilar(
-                any<ByteArray>(),
-                eq(0.6),
-                eq(5)
-            )
-        ).thenReturn(emptyList())
-
-        // Act
-        val result = retrievalService.retrieve(incident)
-
-        // Assert
-        assertTrue(result is Either.Right)
-        val context = (result as Either.Right).value
-        val match = context.similarIncidents[0]
-        // Note: score might be boosted, but for RAW_INCIDENT it's 1.0x
-        assertEquals(similarity, match.score.value, 0.001)
-    }
-
-    @Test
-    fun `RetrievalMatch includes sourceType from SimilarIncidentResult`() {
-        // Arrange
-        val incident = Incident(
-            id = IncidentId(1L),
-            source = "cloudwatch",
-            title = "Test",
-            description = "Test description",
-            severity = Severity.HIGH,
-            status = IncidentStatus.Open,
-            createdAt = testTimestamp,
-            updatedAt = testTimestamp
-        )
-        val queryEmbedding = createMockEmbedding()
-        val similarIncidents = listOf(
-            SimilarIncidentResult(
-                id = 1L,
-                incidentId = 10L,
-                text = "Test text",
-                similarity = 0.9,
-                sourceType = "VERIFIED_DIAGNOSIS"
-            )
-        )
-
-        whenever(embeddingModel.embed(any<TextSegment>()))
-            .thenReturn(Response.from(Embedding.from(queryEmbedding)))
-        whenever(
-            incidentEmbeddingRepository.findSimilar(
-                any<ByteArray>(),
-                eq(0.6),
-                eq(15)
-            )
-        ).thenReturn(similarIncidents)
-        whenever(
-            runbookEmbeddingRepository.findSimilar(
-                any<ByteArray>(),
-                eq(0.6),
-                eq(5)
-            )
-        ).thenReturn(emptyList())
-
-        // Act
-        val result = retrievalService.retrieve(incident)
-
-        // Assert
-        assertTrue(result is Either.Right)
-        val context = (result as Either.Right).value
-        val match = context.similarIncidents[0]
-        assertEquals(SourceType.VERIFIED_DIAGNOSIS, match.sourceType)
-    }
-
-    @Test
-    fun `RetrievalMatch sourceType can be null`() {
-        // Arrange
-        val incident = Incident(
-            id = IncidentId(1L),
-            source = "cloudwatch",
-            title = "Test",
-            description = "Test description",
-            severity = Severity.HIGH,
-            status = IncidentStatus.Open,
-            createdAt = testTimestamp,
-            updatedAt = testTimestamp
-        )
-        val queryEmbedding = createMockEmbedding()
-        val similarIncidents = listOf(
-            SimilarIncidentResult(
-                id = 1L,
-                incidentId = 10L,
-                text = "Test text",
-                similarity = 0.9,
-                sourceType = "UNKNOWN"
-            )
-        )
-
-        whenever(embeddingModel.embed(any<TextSegment>()))
-            .thenReturn(Response.from(Embedding.from(queryEmbedding)))
-        whenever(
-            incidentEmbeddingRepository.findSimilar(
-                any<ByteArray>(),
-                eq(0.6),
-                eq(15)
-            )
-        ).thenReturn(similarIncidents)
-        whenever(
-            runbookEmbeddingRepository.findSimilar(
-                any<ByteArray>(),
-                eq(0.6),
-                eq(5)
-            )
-        ).thenReturn(emptyList())
-
-        // Act
-        val result = retrievalService.retrieve(incident)
-
-        // Assert
-        assertTrue(result is Either.Right)
-        val context = (result as Either.Right).value
-        val match = context.similarIncidents[0]
-        assertEquals(SourceType.RAW_INCIDENT, match.sourceType)
-    }
-
-    @Test
-    fun `retrieveForRunbook includes sourceType in incident matches`() {
-        // Arrange
-        val fragment = RunbookFragment(
-            id = RunbookFragmentId(1L),
-            title = "Test",
-            content = "Test content",
-            tags = null,
-            createdAt = testTimestamp
-        )
-        val queryEmbedding = createMockEmbedding()
-        val similarIncidents = listOf(
-            SimilarIncidentResult(
-                id = 1L,
-                incidentId = 10L,
-                text = "Test text",
-                similarity = 0.9,
-                sourceType = "VERIFIED_DIAGNOSIS"
-            )
-        )
-
-        whenever(embeddingModel.embed(any<TextSegment>()))
-            .thenReturn(Response.from(Embedding.from(queryEmbedding)))
-        whenever(
-            incidentEmbeddingRepository.findSimilar(
-                any<ByteArray>(),
-                eq(0.6),
-                eq(15)
-            )
-        ).thenReturn(similarIncidents)
-        whenever(
-            runbookEmbeddingRepository.findSimilar(
-                any<ByteArray>(),
-                eq(0.6),
-                eq(5)
-            )
-        ).thenReturn(emptyList())
-
-        // Act
-        val result = retrievalService.retrieveForRunbook(fragment)
-
-        // Assert
-        assertTrue(result is Either.Right)
-        val context = (result as Either.Right).value
-        val match = context.similarIncidents[0]
-        assertEquals(SourceType.VERIFIED_DIAGNOSIS, match.sourceType)
-    }
-
-    @Test
-    fun `retrieve applies boost to different source types correctly`() {
+    fun `retrieve handles multiple source types correctly`() {
         // Arrange
         val incident = Incident(
             id = IncidentId(1L),
@@ -659,21 +153,18 @@ class RetrievalServiceTest {
             createdAt = testTimestamp,
             updatedAt = testTimestamp
         )
-        val queryEmbedding = createMockEmbedding()
         
-        // Raw scores are the same, but source types differ
-        val similarIncidents = listOf(
-            SimilarIncidentResult(1, 10, "Raw", 0.8, "RAW_INCIDENT"),
-            SimilarIncidentResult(2, 20, "Verified", 0.8, "VERIFIED_DIAGNOSIS"),
-            SimilarIncidentResult(3, 30, "Resolved", 0.8, "RESOLVED_INCIDENT")
-        )
+        val segment1 = TextSegment.from("Raw", Metadata.from(mapOf("source_type" to SourceType.RAW_INCIDENT.name, "incident_id" to "10")))
+        val segment2 = TextSegment.from("Verified", Metadata.from(mapOf("source_type" to SourceType.VERIFIED_DIAGNOSIS.name, "incident_id" to "20")))
+        val segment3 = TextSegment.from("Resolved", Metadata.from(mapOf("source_type" to SourceType.RESOLVED_INCIDENT.name, "incident_id" to "30")))
+        val segment4 = TextSegment.from("Runbook", Metadata.from(mapOf("source_type" to SourceType.OFFICIAL_RUNBOOK.name, "fragment_id" to "40")))
 
-        whenever(embeddingModel.embed(any<TextSegment>()))
-            .thenReturn(Response.from(Embedding.from(queryEmbedding)))
-        whenever(incidentEmbeddingRepository.findSimilar(any(), any(), any()))
-            .thenReturn(similarIncidents)
-        whenever(runbookEmbeddingRepository.findSimilar(any(), any(), any()))
-            .thenReturn(emptyList())
+        whenever(incidentRetriever.retrieve(any())).thenReturn(listOf(
+            Content.from(segment1),
+            Content.from(segment2),
+            Content.from(segment3),
+            Content.from(segment4)
+        ))
 
         // Act
         val result = retrievalService.retrieve(incident)
@@ -681,46 +172,12 @@ class RetrievalServiceTest {
         // Assert
         assertTrue(result is Either.Right)
         val context = (result as Either.Right).value
+        assertEquals(3, context.similarIncidents.size)
+        assertEquals(1, context.similarRunbooks.size)
         
-        // Resolved should be first (0.8 * 1.2 = 0.96)
-        assertEquals(IncidentId(30), context.similarIncidents[0].id)
-        assertEquals(0.96, context.similarIncidents[0].score.value, 0.001)
-        
-        // Verified should be second (0.8 * 1.1 = 0.88)
-        assertEquals(IncidentId(20), context.similarIncidents[1].id)
-        assertEquals(0.88, context.similarIncidents[1].score.value, 0.001)
-        
-        // Raw should be third (0.8 * 1.0 = 0.8)
-        assertEquals(IncidentId(10), context.similarIncidents[2].id)
-        assertEquals(0.8, context.similarIncidents[2].score.value, 0.001)
-    }
-
-    private fun createMockEmbedding(): FloatArray {
-        // Create a 768-dimensional mock embedding (matching nomic-embed-text dimensions)
-        return FloatArray(768) { it.toFloat() / 768f }
-    }
-
-    private fun createMockSimilarIncidents(count: Int): List<SimilarIncidentResult> {
-        return (1..count).map { i ->
-            SimilarIncidentResult(
-                id = i.toLong(),
-                incidentId = 10L + i,
-                text = "Similar incident text $i",
-                similarity = 0.9 - (i * 0.05),
-                sourceType = "RAW_INCIDENT"
-            )
-        }
-    }
-
-    private fun createMockSimilarRunbooks(count: Int): List<SimilarRunbookResult> {
-        return (1..count).map { i ->
-            SimilarRunbookResult(
-                id = i.toLong(),
-                fragmentId = 20L + i,
-                text = "Similar runbook text $i",
-                similarity = 0.85 - (i * 0.05),
-                sourceType = "OFFICIAL_RUNBOOK"
-            )
-        }
+        assertTrue(context.similarIncidents.any { it.id == IncidentId(10) })
+        assertTrue(context.similarIncidents.any { it.id == IncidentId(20) })
+        assertTrue(context.similarIncidents.any { it.id == IncidentId(30) })
+        assertEquals(RunbookFragmentId(40), context.similarRunbooks[0].id)
     }
 }

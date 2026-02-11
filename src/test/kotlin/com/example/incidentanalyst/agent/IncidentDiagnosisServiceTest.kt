@@ -9,8 +9,6 @@ import com.example.incidentanalyst.diagnosis.DiagnosisSuccess
 import com.example.incidentanalyst.incident.IncidentEntity
 import com.example.incidentanalyst.incident.IncidentId
 import com.example.incidentanalyst.incident.IncidentRepository
-import com.example.incidentanalyst.rag.RetrievalContext
-import com.example.incidentanalyst.rag.RetrievalService
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.quarkus.test.InjectMock
 import io.quarkus.test.junit.QuarkusTest
@@ -27,9 +25,6 @@ class IncidentDiagnosisServiceTest {
 
     @InjectMock
     lateinit var incidentRepository: IncidentRepository
-
-    @InjectMock
-    lateinit var retrievalService: RetrievalService
 
     @InjectMock
     lateinit var aiService: IncidentAnalystAgent
@@ -50,7 +45,7 @@ class IncidentDiagnosisServiceTest {
 
     @BeforeEach
     fun setup() {
-        reset(incidentRepository, retrievalService, aiService, diagnosisRepository, profileService)
+        reset(incidentRepository, aiService, diagnosisRepository, profileService)
         
         whenever(profileService.getProfile()).thenReturn(
             ApplicationProfile("Test App", listOf("Kotlin"), listOf("DB"), "us-east-1")
@@ -93,12 +88,11 @@ class IncidentDiagnosisServiceTest {
         assertTrue(success is DiagnosisSuccess.ExistingDiagnosisFound)
         assertEquals(456L, (success as DiagnosisSuccess.ExistingDiagnosisFound).diagnosis.id.value)
         
-        verifyNoInteractions(retrievalService)
         verifyNoInteractions(aiService)
     }
 
     @Test
-    fun `diagnose performs full RAG flow if no existing diagnosis`() {
+    fun `diagnose performs full AI flow if no existing diagnosis`() {
         // Arrange
         val incidentId = IncidentId(123L)
         val incidentEntity = IncidentEntity(
@@ -111,7 +105,6 @@ class IncidentDiagnosisServiceTest {
             createdAt = testTimestamp,
             updatedAt = testTimestamp
         )
-        val retrievalContext = RetrievalContext(emptyList(), emptyList(), "query")
         val llmResponse = """
             {
               "rootCause": "Memory leak",
@@ -122,8 +115,7 @@ class IncidentDiagnosisServiceTest {
 
         whenever(incidentRepository.findById(123L)).thenReturn(incidentEntity)
         whenever(diagnosisRepository.findByIncidentId(123L)).thenReturn(null)
-        whenever(retrievalService.retrieve(any())).thenReturn(Either.Right(retrievalContext))
-        whenever(aiService.proposeDiagnosis(any(), any(), any(), any(), any())).thenReturn(llmResponse)
+        whenever(aiService.proposeDiagnosis(any(), any(), any(), any())).thenReturn(llmResponse)
         whenever(diagnosisRepository.persist(any<DiagnosisEntity>())).thenAnswer {
             (it.arguments[0] as DiagnosisEntity).id = 999L
             Unit
@@ -137,13 +129,11 @@ class IncidentDiagnosisServiceTest {
         val success = (result as Either.Right).value
         assertTrue(success is DiagnosisSuccess.NewDiagnosisGenerated)
         
-        verify(retrievalService).retrieve(any())
         verify(aiService).proposeDiagnosis(
             appName = eq("Test App"),
             appStack = eq("Kotlin"),
             appComponents = eq("DB"),
-            incident = argThat { contains("High CPU") },
-            context = any()
+            incident = argThat { contains("High CPU") }
         )
         verify(diagnosisRepository).persist(any<DiagnosisEntity>())
         assertEquals("DIAGNOSED:999", incidentEntity.status)
@@ -163,7 +153,6 @@ class IncidentDiagnosisServiceTest {
             createdAt = testTimestamp,
             updatedAt = testTimestamp
         )
-        val retrievalContext = RetrievalContext(emptyList(), emptyList(), "query")
         val llmResponse = """
             ```json
             {
@@ -176,8 +165,7 @@ class IncidentDiagnosisServiceTest {
 
         whenever(incidentRepository.findById(123L)).thenReturn(incidentEntity)
         whenever(diagnosisRepository.findByIncidentId(123L)).thenReturn(null)
-        whenever(retrievalService.retrieve(any())).thenReturn(Either.Right(retrievalContext))
-        whenever(aiService.proposeDiagnosis(any(), any(), any(), any(), any())).thenReturn(llmResponse)
+        whenever(aiService.proposeDiagnosis(any(), any(), any(), any())).thenReturn(llmResponse)
         whenever(diagnosisRepository.persist(any<DiagnosisEntity>())).thenAnswer {
             (it.arguments[0] as DiagnosisEntity).id = 888L
             Unit

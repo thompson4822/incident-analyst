@@ -12,6 +12,8 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import java.time.Instant
+import dev.langchain4j.data.segment.TextSegment
+import dev.langchain4j.store.embedding.EmbeddingStore
 
 @QuarkusTest
 class RunbookRepositoryTest {
@@ -20,12 +22,11 @@ class RunbookRepositoryTest {
     lateinit var runbookFragmentRepository: RunbookFragmentRepository
 
     @Inject
-    lateinit var runbookEmbeddingRepository: com.example.incidentanalyst.rag.RunbookEmbeddingRepository
+    lateinit var embeddingStore: EmbeddingStore<TextSegment>
 
     @BeforeEach
     @Transactional
     fun cleanup() {
-        runbookEmbeddingRepository.deleteAll()
         runbookFragmentRepository.deleteAll()
     }
 

@@ -1,6 +1,9 @@
 package com.example.incidentanalyst.incident
 
+import com.example.incidentanalyst.agent.IncidentDiagnosisService
 import com.example.incidentanalyst.common.Either
+import com.example.incidentanalyst.diagnosis.DiagnosisService
+import com.example.incidentanalyst.rag.EmbeddingService
 import io.quarkus.test.InjectMock
 import io.quarkus.test.junit.QuarkusTest
 import io.restassured.RestAssured.given
@@ -21,9 +24,18 @@ class IncidentResourceTest {
     @InjectMock
     lateinit var incidentService: IncidentService
 
+    @InjectMock
+    lateinit var diagnosisService: DiagnosisService
+
+    @InjectMock
+    lateinit var incidentDiagnosisService: IncidentDiagnosisService
+
+    @InjectMock
+    lateinit var embeddingService: EmbeddingService
+
     @BeforeEach
     fun setup() {
-        reset(incidentService)
+        reset(incidentService, diagnosisService, incidentDiagnosisService, embeddingService)
     }
 
     @Test

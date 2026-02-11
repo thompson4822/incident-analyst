@@ -30,6 +30,9 @@ open class DiagnosisEntity(
     @Column(name = "remediation_steps", columnDefinition = "text")
     open var remediationSteps: String = "",
 
+    @Column(name = "structured_steps", columnDefinition = "text")
+    open var structuredSteps: String? = null,
+
     open var confidence: String = "",
     open var verification: String = "UNVERIFIED",
     @Column(name = "created_at")

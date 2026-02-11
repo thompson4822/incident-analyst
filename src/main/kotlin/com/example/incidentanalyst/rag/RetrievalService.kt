@@ -5,24 +5,15 @@ import com.example.incidentanalyst.incident.Incident
 import com.example.incidentanalyst.incident.IncidentId
 import com.example.incidentanalyst.runbook.RunbookFragment
 import com.example.incidentanalyst.runbook.RunbookFragmentId
-import dev.langchain4j.data.segment.TextSegment
-import dev.langchain4j.model.embedding.EmbeddingModel
+import dev.langchain4j.rag.content.retriever.ContentRetriever
+import dev.langchain4j.rag.query.Query
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.inject.Inject
-import java.nio.ByteBuffer
 import org.jboss.logging.Logger
-
-private fun floatArrayToByteArray(floatArray: FloatArray): ByteArray {
-    val buffer = ByteBuffer.allocate(floatArray.size * java.lang.Float.BYTES)
-    floatArray.forEach { buffer.putFloat(it) }
-    return buffer.array()
-}
 
 @ApplicationScoped
 class RetrievalService @Inject constructor(
-    private val embeddingModel: EmbeddingModel,
-    private val incidentEmbeddingRepository: IncidentEmbeddingRepository,
-    private val runbookEmbeddingRepository: RunbookEmbeddingRepository
+    private val incidentRetriever: ContentRetriever
 ) {
     private val log = Logger.getLogger(javaClass)
 
@@ -32,8 +23,8 @@ class RetrievalService @Inject constructor(
             return Either.Left(RetrievalError.InvalidQuery)
         }
 
-        val query = buildQueryFromIncident(incident)
-        return performRetrieval(query)
+        val queryText = buildQueryFromIncident(incident)
+        return performRetrieval(queryText)
     }
 
     fun retrieveForRunbook(fragment: RunbookFragment): Either<RetrievalError, RetrievalContext> {
@@ -42,80 +33,54 @@ class RetrievalService @Inject constructor(
             return Either.Left(RetrievalError.InvalidQuery)
         }
 
-        val query = buildQueryFromRunbook(fragment)
-        return performRetrieval(query)
+        val queryText = buildQueryFromRunbook(fragment)
+        return performRetrieval(queryText)
     }
 
-    private fun performRetrieval(query: String): Either<RetrievalError, RetrievalContext> {
-        log.infof("Performing retrieval with query: %s", query)
-        if (query.isBlank()) {
-            return Either.Left(RetrievalError.InvalidQuery)
-        }
+    private fun performRetrieval(queryText: String): Either<RetrievalError, RetrievalContext> {
+        return try {
+            val query = Query.from(queryText)
+            val contents = incidentRetriever.retrieve(query)
 
-        val queryEmbedding = try {
-            log.info("Generating embedding for query...")
-            embeddingModel.embed(TextSegment.from(query)).content().vector()
-        } catch (e: Exception) {
-            log.error("Failed to generate embedding", e)
-            return Either.Left(RetrievalError.ModelUnavailable)
-        }
+            val similarIncidents = mutableListOf<RetrievalMatch<IncidentId>>()
+            val similarRunbooks = mutableListOf<RetrievalMatch<RunbookFragmentId>>()
 
-        val queryEmbeddingBytes = floatArrayToByteArray(queryEmbedding)
-
-        val similarIncidents = try {
-            log.info("Searching for similar incidents in DB...")
-            incidentEmbeddingRepository.findSimilar(
-                queryEmbedding = queryEmbeddingBytes,
-                minScore = 0.6,
-                limit = 15
-            )
-        } catch (e: Exception) {
-            log.error("Database search for incidents failed", e)
-            return Either.Left(RetrievalError.SearchFailed)
-        }
-
-        val similarRunbooks = try {
-            log.info("Searching for similar runbooks in DB...")
-            runbookEmbeddingRepository.findSimilar(
-                queryEmbedding = queryEmbeddingBytes,
-                minScore = 0.6,
-                limit = 5
-            )
-        } catch (e: Exception) {
-            log.error("Database search for runbooks failed", e)
-            return Either.Left(RetrievalError.SearchFailed)
-        }
-
-        log.infof("Found %d similar incidents and %d similar runbooks", similarIncidents.size, similarRunbooks.size)
-
-        val context = RetrievalContext(
-            similarIncidents = similarIncidents.map {
-                val sourceType = try { SourceType.valueOf(it.sourceType) } catch (e: Exception) { SourceType.RAW_INCIDENT }
-                val boost = when (sourceType) {
-                    SourceType.RESOLVED_INCIDENT -> 1.2
-                    SourceType.VERIFIED_DIAGNOSIS -> 1.1
-                    SourceType.RAW_INCIDENT -> 1.0
-                    SourceType.OFFICIAL_RUNBOOK -> 1.0
+            contents.forEach { content ->
+                val segment = content.textSegment()
+                val sourceType = try { 
+                    SourceType.valueOf(segment.metadata().getString("source_type") ?: SourceType.RAW_INCIDENT.name) 
+                } catch (e: Exception) { 
+                    SourceType.RAW_INCIDENT 
                 }
-                RetrievalMatch(
-                    id = IncidentId(it.incidentId),
-                    score = EmbeddingScore(it.similarity * boost),
-                    snippet = it.text?.take(400),
-                    sourceType = sourceType
-                )
-            }.sortedByDescending { it.score.value }.take(5),
-            similarRunbooks = similarRunbooks.map {
-                RetrievalMatch(
-                    id = RunbookFragmentId(it.fragmentId),
-                    score = EmbeddingScore(it.similarity),
-                    snippet = it.text?.take(400),
-                    sourceType = SourceType.OFFICIAL_RUNBOOK
-                )
-            }.sortedByDescending { it.score.value }.take(3),
-            query = query
-        )
 
-        return Either.Right(context)
+                if (sourceType == SourceType.OFFICIAL_RUNBOOK) {
+                    val id = segment.metadata().getString("fragment_id")?.toLongOrNull() ?: 0L
+                    similarRunbooks.add(RetrievalMatch(
+                        id = RunbookFragmentId(id),
+                        score = EmbeddingScore(0.0), // Score not directly exposed by high-level retriever
+                        snippet = segment.text(),
+                        sourceType = sourceType
+                    ))
+                } else {
+                    val id = segment.metadata().getString("incident_id")?.toLongOrNull() ?: 0L
+                    similarIncidents.add(RetrievalMatch(
+                        id = IncidentId(id),
+                        score = EmbeddingScore(0.0),
+                        snippet = segment.text(),
+                        sourceType = sourceType
+                    ))
+                }
+            }
+
+            Either.Right(RetrievalContext(
+                similarIncidents = similarIncidents.take(5),
+                similarRunbooks = similarRunbooks.take(3),
+                query = queryText
+            ))
+        } catch (e: Exception) {
+            log.error("Retrieval failed", e)
+            Either.Left(RetrievalError.SearchFailed)
+        }
     }
 
     private fun buildQueryFromIncident(incident: Incident): String = """

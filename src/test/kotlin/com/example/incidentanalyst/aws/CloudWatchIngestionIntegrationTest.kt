@@ -6,6 +6,8 @@ import com.example.incidentanalyst.incident.IncidentId
 import com.example.incidentanalyst.incident.IncidentRepository
 import com.example.incidentanalyst.incident.IncidentService
 import com.example.incidentanalyst.incident.Severity
+import dev.langchain4j.data.segment.TextSegment
+import dev.langchain4j.store.embedding.EmbeddingStore
 import io.quarkus.test.InjectMock
 import io.quarkus.test.junit.QuarkusTest
 import jakarta.inject.Inject
@@ -37,10 +39,7 @@ class CloudWatchIngestionIntegrationTest {
     lateinit var diagnosisRepository: com.example.incidentanalyst.diagnosis.DiagnosisRepository
 
     @Inject
-    lateinit var incidentEmbeddingRepository: com.example.incidentanalyst.rag.IncidentEmbeddingRepository
-
-    @Inject
-    lateinit var runbookEmbeddingRepository: com.example.incidentanalyst.rag.RunbookEmbeddingRepository
+    lateinit var embeddingStore: EmbeddingStore<TextSegment>
 
     @Inject
     lateinit var runbookFragmentRepository: com.example.incidentanalyst.runbook.RunbookFragmentRepository
@@ -50,8 +49,6 @@ class CloudWatchIngestionIntegrationTest {
     fun setup() {
         reset(cloudWatchAlarmClient)
         // Clear database in correct order to respect foreign keys
-        incidentEmbeddingRepository.deleteAll()
-        runbookEmbeddingRepository.deleteAll()
         diagnosisRepository.deleteAll()
         incidentRepository.deleteAll()
         runbookFragmentRepository.deleteAll()

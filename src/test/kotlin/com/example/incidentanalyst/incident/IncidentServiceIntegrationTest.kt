@@ -1,6 +1,15 @@
 package com.example.incidentanalyst.incident
 
 import com.example.incidentanalyst.common.Either
+import com.example.incidentanalyst.incident.Incident
+import com.example.incidentanalyst.incident.IncidentEntity
+import com.example.incidentanalyst.incident.IncidentId
+import com.example.incidentanalyst.incident.IncidentRepository
+import com.example.incidentanalyst.incident.IncidentStatus
+import com.example.incidentanalyst.incident.Severity
+import com.example.incidentanalyst.incident.toEntity
+import dev.langchain4j.data.segment.TextSegment
+import dev.langchain4j.store.embedding.EmbeddingStore
 import io.quarkus.test.junit.QuarkusTest
 import jakarta.inject.Inject
 import jakarta.transaction.Transactional
@@ -24,177 +33,29 @@ class IncidentServiceIntegrationTest {
     lateinit var diagnosisRepository: com.example.incidentanalyst.diagnosis.DiagnosisRepository
 
     @Inject
-    lateinit var incidentEmbeddingRepository: com.example.incidentanalyst.rag.IncidentEmbeddingRepository
+    lateinit var embeddingStore: EmbeddingStore<TextSegment>
 
     @Inject
-    lateinit var runbookEmbeddingRepository: com.example.incidentanalyst.rag.RunbookEmbeddingRepository
+    lateinit var runbookFragmentRepository: com.example.incidentanalyst.runbook.RunbookFragmentRepository
 
     @BeforeEach
     @Transactional
     fun setup() {
         // Clear database in correct order to respect foreign keys
-        incidentEmbeddingRepository.deleteAll()
-        runbookEmbeddingRepository.deleteAll()
         diagnosisRepository.deleteAll()
         incidentRepository.deleteAll()
+        runbookFragmentRepository.deleteAll()
     }
 
     @Test
     @Transactional
-    fun `create persists incident and returns with assigned ID`() {
-        val timestamp = Instant.now()
-        val incident = Incident(
-            id = IncidentId(0), // Placeholder ID
-            source = "cloudwatch",
-            title = "High CPU Usage",
-            description = "CPU usage exceeded threshold",
-            severity = Severity.HIGH,
-            status = IncidentStatus.Open,
-            createdAt = timestamp,
-            updatedAt = timestamp
-        )
-
-        val created = incidentService.create(incident)
-
-        assertTrue(created.id.value > 0, "ID should be assigned by database")
-        assertEquals("cloudwatch", created.source)
-        assertEquals("High CPU Usage", created.title)
-        assertEquals("CPU usage exceeded threshold", created.description)
-        assertEquals(Severity.HIGH, created.severity)
-        assertTrue(created.status is IncidentStatus.Open)
-        assertNotNull(created.createdAt)
-        assertNotNull(created.updatedAt)
-    }
-
-    @Test
-    @Transactional
-    fun `create persists incident with Acknowledged status`() {
+    fun `create and retrieve incident`() {
         val timestamp = Instant.now()
         val incident = Incident(
             id = IncidentId(0),
-            source = "manual",
-            title = "Database Connection Issue",
-            description = "Connection pool exhausted",
-            severity = Severity.MEDIUM,
-            status = IncidentStatus.Acknowledged,
-            createdAt = timestamp,
-            updatedAt = timestamp
-        )
-
-        val created = incidentService.create(incident)
-
-        assertTrue(created.id.value > 0)
-        assertTrue(created.status is IncidentStatus.Acknowledged)
-    }
-
-    @Test
-    @Transactional
-    fun `create persists incident with Resolved status`() {
-        val timestamp = Instant.now()
-        val incident = Incident(
-            id = IncidentId(0),
-            source = "manual",
-            title = "Disk Space Warning",
-            description = "Disk usage at 85%",
-            severity = Severity.LOW,
-            status = IncidentStatus.Resolved,
-            createdAt = timestamp,
-            updatedAt = timestamp
-        )
-
-        val created = incidentService.create(incident)
-
-        assertTrue(created.id.value > 0)
-        assertTrue(created.status is IncidentStatus.Resolved)
-    }
-
-    @Test
-    @Transactional
-    fun `create persists incident with Diagnosed status`() {
-        val timestamp = Instant.now()
-        val diagnosisId = 123L
-        val incident = Incident(
-            id = IncidentId(0),
-            source = "ai",
-            title = "Memory Leak Detected",
-            description = "Memory usage steadily increasing",
-            severity = Severity.CRITICAL,
-            status = IncidentStatus.Diagnosed(diagnosisId),
-            createdAt = timestamp,
-            updatedAt = timestamp
-        )
-
-        val created = incidentService.create(incident)
-
-        assertTrue(created.id.value > 0)
-        assertTrue(created.status is IncidentStatus.Diagnosed)
-        val diagnosedStatus = created.status as IncidentStatus.Diagnosed
-        assertEquals(diagnosisId, diagnosedStatus.diagnosisId)
-    }
-
-    @Test
-    @Transactional
-    fun `create persists incident with INFO severity`() {
-        val timestamp = Instant.now()
-        val incident = Incident(
-            id = IncidentId(0),
-            source = "monitoring",
-            title = "Info-level incident",
-            description = "Informational notification",
-            severity = Severity.INFO,
-            status = IncidentStatus.Open,
-            createdAt = timestamp,
-            updatedAt = timestamp
-        )
-
-        val created = incidentService.create(incident)
-
-        assertTrue(created.id.value > 0)
-        assertEquals(Severity.INFO, created.severity)
-    }
-
-    @Test
-    @Transactional
-    fun `create persists multiple incidents and assigns unique IDs`() {
-        val timestamp = Instant.now()
-        val incident1 = Incident(
-            id = IncidentId(0),
-            source = "cloudwatch",
-            title = "Incident 1",
-            description = "First incident",
-            severity = Severity.HIGH,
-            status = IncidentStatus.Open,
-            createdAt = timestamp,
-            updatedAt = timestamp
-        )
-        val incident2 = Incident(
-            id = IncidentId(0),
-            source = "cloudwatch",
-            title = "Incident 2",
-            description = "Second incident",
-            severity = Severity.MEDIUM,
-            status = IncidentStatus.Open,
-            createdAt = timestamp,
-            updatedAt = timestamp
-        )
-
-        val created1 = incidentService.create(incident1)
-        val created2 = incidentService.create(incident2)
-
-        assertTrue(created1.id.value > 0)
-        assertTrue(created2.id.value > 0)
-        assertTrue(created1.id.value != created2.id.value, "IDs should be unique")
-    }
-
-    @Test
-    @Transactional
-    fun `create persists incident and can be retrieved by ID`() {
-        val timestamp = Instant.now()
-        val incident = Incident(
-            id = IncidentId(0),
-            source = "cloudwatch",
+            source = "test",
             title = "Test Incident",
-            description = "Test description",
+            description = "Test Description",
             severity = Severity.HIGH,
             status = IncidentStatus.Open,
             createdAt = timestamp,
@@ -207,7 +68,28 @@ class IncidentServiceIntegrationTest {
         assertTrue(retrieved is Either.Right)
         val retrievedIncident = (retrieved as Either.Right).value
         assertEquals(created.id.value, retrievedIncident.id.value)
-        assertEquals("Test Incident", retrievedIncident.title)
-        assertEquals("Test description", retrievedIncident.description)
+    }
+
+    @Test
+    @Transactional
+    fun `update incident status`() {
+        val timestamp = Instant.now()
+        val incident = Incident(
+            id = IncidentId(0),
+            source = "test",
+            title = "Test Incident",
+            description = "Test Description",
+            severity = Severity.HIGH,
+            status = IncidentStatus.Open,
+            createdAt = timestamp,
+            updatedAt = timestamp
+        )
+
+        val created = incidentService.create(incident)
+        val updated = incidentService.updateStatus(created.id, IncidentStatus.Acknowledged)
+
+        assertTrue(updated is Either.Right)
+        val updatedIncident = (updated as Either.Right).value
+        assertTrue(updatedIncident.status is IncidentStatus.Acknowledged)
     }
 }

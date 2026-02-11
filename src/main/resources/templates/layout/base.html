@@ -100,5 +100,35 @@
         {#insert body}{/insert}
       </main>
     </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast toast-end toast-bottom z-[100]"></div>
+
+    <script>
+      document.body.addEventListener('show-toast', function(evt) {
+        const toastContainer = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        const alertClass = evt.detail.type === 'success' ? 'alert-success' : 
+                          evt.detail.type === 'error' ? 'alert-error' : 'alert-info';
+        
+        toast.className = "alert " + alertClass + " shadow-lg mb-2 transition-all duration-300 transform translate-y-10 opacity-0";
+        toast.innerHTML = "<div><span>" + evt.detail.message + "</span></div>";
+        
+        toastContainer.appendChild(toast);
+        
+        // Animate in
+        setTimeout(() => {
+          toast.classList.remove('translate-y-10', 'opacity-0');
+        }, 10);
+        
+        // Auto-remove
+        setTimeout(() => {
+          toast.classList.add('translate-y-10', 'opacity-0');
+          setTimeout(() => {
+            toast.remove();
+          }, 300);
+        }, 5000);
+      });
+    </script>
   </body>
 </html>
