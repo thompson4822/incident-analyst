@@ -3,12 +3,14 @@ package com.example.incidentanalyst.ingestion
 import com.example.incidentanalyst.common.Either
 import com.example.incidentanalyst.incident.IncidentService
 import jakarta.enterprise.context.ApplicationScoped
+import jakarta.validation.Validator
 import org.eclipse.microprofile.config.inject.ConfigProperty
 import org.jboss.logging.Logger
 
 @ApplicationScoped
 class WebhookIngestionService(
     private val incidentService: IncidentService,
+    private val validator: Validator,
     @ConfigProperty(name = "app.ingestion.webhook.api-key")
     private val apiKey: String
 ) {
@@ -21,11 +23,14 @@ class WebhookIngestionService(
             return Either.Left(WebhookIngestionError.Unauthorized)
         }
 
-        // 2. Validate request
-        val validationErrors = request.validate()
-        if (validationErrors.isNotEmpty()) {
-            log.debugf("Webhook validation failed: %s", validationErrors)
-            return Either.Left(WebhookIngestionError.ValidationError(validationErrors))
+        // 2. Validate request using Hibernate Validator
+        val violations = validator.validate(request)
+        if (violations.isNotEmpty()) {
+            val errors = violations.map { violation ->
+                "${violation.propertyPath} ${violation.message}"
+            }
+            log.debugf("Webhook validation failed: %s", errors)
+            return Either.Left(WebhookIngestionError.ValidationError(errors))
         }
 
         // 3. Create incident

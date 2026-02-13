@@ -6,6 +6,7 @@ import io.quarkus.test.InjectMock
 import io.quarkus.test.junit.QuarkusTest
 import io.restassured.RestAssured.given
 import io.restassured.http.ContentType
+import org.hamcrest.CoreMatchers.containsString
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.CoreMatchers.notNullValue
 import org.junit.jupiter.api.BeforeEach
@@ -622,7 +623,8 @@ class DiagnosisResourceTest {
             .post("/diagnoses/$testId/verify")
             .then()
             .statusCode(400)
-            .body("error", equalTo("verifiedBy is required"))
+            .body("message", equalTo("Validation failed"))
+            .body("errors[0]", containsString("verifiedBy"))
     }
 
     @Test
@@ -638,7 +640,8 @@ class DiagnosisResourceTest {
             .post("/diagnoses/$testId/verify")
             .then()
             .statusCode(400)
-            .body("error", equalTo("verifiedBy is required"))
+            .body("message", equalTo("Validation failed"))
+            .body("errors[0]", containsString("verifiedBy"))
     }
 
     @Test

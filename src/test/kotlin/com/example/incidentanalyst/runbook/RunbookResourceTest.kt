@@ -6,6 +6,7 @@ import io.quarkus.test.junit.QuarkusTest
 import io.restassured.RestAssured.given
 import io.restassured.http.ContentType
 import jakarta.inject.Inject
+import org.hamcrest.CoreMatchers.containsString
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.CoreMatchers.nullValue
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -205,14 +206,8 @@ class RunbookResourceTest {
 
     @Test
     fun `PUT returns 400 for ValidationFailed error with blank title`() {
-        // Arrange
+        // Arrange - validation happens at JAX-RS level via @Valid, no service mock needed
         val testId = 123L
-        whenever(runbookService.updateFragment(
-            RunbookFragmentId(testId),
-            "   ",
-            "Content",
-            null
-        )).thenReturn(Either.Left(RunbookFragmentError.ValidationFailed))
 
         // Act & Assert
         given()
@@ -222,19 +217,14 @@ class RunbookResourceTest {
             .put("/runbooks/$testId")
             .then()
             .statusCode(400)
-            .body("error", equalTo("Invalid request data"))
+            .body("message", equalTo("Validation failed"))
+            .body("errors[0]", containsString("title"))
     }
 
     @Test
     fun `PUT returns 400 for ValidationFailed error with blank content`() {
-        // Arrange
+        // Arrange - validation happens at JAX-RS level via @Valid, no service mock needed
         val testId = 123L
-        whenever(runbookService.updateFragment(
-            RunbookFragmentId(testId),
-            "Title",
-            "",
-            null
-        )).thenReturn(Either.Left(RunbookFragmentError.ValidationFailed))
 
         // Act & Assert
         given()
@@ -244,19 +234,14 @@ class RunbookResourceTest {
             .put("/runbooks/$testId")
             .then()
             .statusCode(400)
-            .body("error", equalTo("Invalid request data"))
+            .body("message", equalTo("Validation failed"))
+            .body("errors[0]", containsString("content"))
     }
 
     @Test
     fun `PUT returns 400 for ValidationFailed error with both blank`() {
-        // Arrange
+        // Arrange - validation happens at JAX-RS level via @Valid, no service mock needed
         val testId = 123L
-        whenever(runbookService.updateFragment(
-            RunbookFragmentId(testId),
-            "",
-            "   ",
-            null
-        )).thenReturn(Either.Left(RunbookFragmentError.ValidationFailed))
 
         // Act & Assert
         given()
@@ -266,7 +251,8 @@ class RunbookResourceTest {
             .put("/runbooks/$testId")
             .then()
             .statusCode(400)
-            .body("error", equalTo("Invalid request data"))
+            .body("message", equalTo("Validation failed"))
+            .body("errors.size()", equalTo(2))
     }
 
     @Test

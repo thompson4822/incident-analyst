@@ -4,36 +4,24 @@ import com.example.incidentanalyst.incident.Incident
 import com.example.incidentanalyst.incident.IncidentId
 import com.example.incidentanalyst.incident.IncidentStatus
 import com.example.incidentanalyst.incident.Severity
+import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.Size
 import java.time.Instant
 
 data class GenericIncidentRequestDto(
+    @field:NotBlank(message = "title is required and must not be blank")
+    @field:Size(max = MAX_TITLE_LENGTH, message = "title must not exceed $MAX_TITLE_LENGTH characters")
     val title: String?,
+
+    @field:NotBlank(message = "description is required and must not be blank")
     val description: String?,
-    val severity: String?,
+
+    val severity: String?,  // Optional, defaults to MEDIUM in toDomain()
+
+    @field:NotBlank(message = "source is required and must not be blank")
+    @field:Size(max = MAX_SOURCE_LENGTH, message = "source must not exceed $MAX_SOURCE_LENGTH characters")
     val source: String?
 ) {
-    fun validate(): List<String> {
-        val errors = mutableListOf<String>()
-        
-        if (title.isNullOrBlank()) {
-            errors.add("title is required and must not be blank")
-        } else if (title.length > MAX_TITLE_LENGTH) {
-            errors.add("title must not exceed $MAX_TITLE_LENGTH characters")
-        }
-        
-        if (description.isNullOrBlank()) {
-            errors.add("description is required and must not be blank")
-        }
-        
-        if (source.isNullOrBlank()) {
-            errors.add("source is required and must not be blank")
-        } else if (source.length > MAX_SOURCE_LENGTH) {
-            errors.add("source must not exceed $MAX_SOURCE_LENGTH characters")
-        }
-        
-        return errors
-    }
-    
     fun toDomain(): Incident {
         val now = Instant.now()
         return Incident(

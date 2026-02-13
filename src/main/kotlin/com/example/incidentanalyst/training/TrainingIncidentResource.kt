@@ -6,6 +6,7 @@ import com.example.incidentanalyst.incident.IncidentStatus
 import com.example.incidentanalyst.incident.IncidentId
 import com.fasterxml.jackson.databind.ObjectMapper
 import jakarta.inject.Inject
+import jakarta.validation.Valid
 import jakarta.ws.rs.Consumes
 import jakarta.ws.rs.POST
 import jakarta.ws.rs.Path as JaxRsPath
@@ -37,7 +38,7 @@ class TrainingIncidentResource @Inject constructor(
     @JaxRsPath("/incidents")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    fun createTrainingIncident(request: TrainingIncidentRequestDto): Response {
+    fun createTrainingIncident(@Valid request: TrainingIncidentRequestDto): Response {
         val timestamp = request.timestamp ?: Instant.now()
 
         val incident = Incident(

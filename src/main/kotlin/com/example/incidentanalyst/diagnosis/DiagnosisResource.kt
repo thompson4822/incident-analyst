@@ -1,5 +1,6 @@
 package com.example.incidentanalyst.diagnosis
 
+import jakarta.validation.Valid
 import jakarta.ws.rs.GET
 import jakarta.ws.rs.POST
 import jakarta.ws.rs.Path
@@ -80,19 +81,12 @@ class DiagnosisResource(
     @Produces(MediaType.APPLICATION_JSON)
     fun verify(
         @PathParam("id") id: Long,
-        request: DiagnosisVerifyRequestDto
+        @Valid request: DiagnosisVerifyRequestDto
     ): Response {
         if (id <= 0) {
             return Response.status(Response.Status.BAD_REQUEST)
                 .type(MediaType.APPLICATION_JSON)
                 .entity(mapOf("error" to "Diagnosis ID must be a positive number"))
-                .build()
-        }
-
-        if (request.verifiedBy.isBlank()) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                .type(MediaType.APPLICATION_JSON)
-                .entity(mapOf("error" to "verifiedBy is required"))
                 .build()
         }
 

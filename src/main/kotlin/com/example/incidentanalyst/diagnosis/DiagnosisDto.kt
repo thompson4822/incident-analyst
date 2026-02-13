@@ -1,5 +1,8 @@
 package com.example.incidentanalyst.diagnosis
 
+import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.Size
+
 data class DiagnosisResponseDto(
     val id: Long,
     val incidentId: Long,
@@ -16,6 +19,8 @@ data class DiagnosisVerificationUpdateRequestDto(
 )
 
 data class DiagnosisVerifyRequestDto(
+    @field:NotBlank(message = "verifiedBy is required and must not be blank")
+    @field:Size(max = 255, message = "verifiedBy must not exceed 255 characters")
     val verifiedBy: String
 )
 
