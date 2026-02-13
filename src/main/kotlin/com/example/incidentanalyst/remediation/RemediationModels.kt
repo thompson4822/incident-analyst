@@ -34,3 +34,21 @@ sealed interface RemediationResult {
     data class Success(val plan: RemediationPlan) : RemediationResult
     data class Failure(val error: RemediationError) : RemediationResult
 }
+
+enum class ExecutionStatus {
+    NOT_STARTED,
+    IN_PROGRESS,
+    COMPLETED,
+    FAILED
+}
+
+data class RemediationProgress(
+    val incidentId: Long,
+    val diagnosisId: Long,
+    val steps: List<RemediationStep>,
+    val currentStepIndex: Int,
+    val status: ExecutionStatus,
+    val startedAt: java.time.Instant?,
+    val completedAt: java.time.Instant?,
+    val errorMessage: String? = null
+)

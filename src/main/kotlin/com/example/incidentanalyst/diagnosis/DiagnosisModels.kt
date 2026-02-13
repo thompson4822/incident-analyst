@@ -2,7 +2,31 @@ package com.example.incidentanalyst.diagnosis
 
 import com.example.incidentanalyst.incident.IncidentEntity
 import com.example.incidentanalyst.incident.IncidentId
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.KotlinModule
 import java.time.Instant
+
+private val objectMapper = ObjectMapper()
+    .registerModule(KotlinModule.Builder().build())
+
+fun parseStructuredSteps(json: String?): List<com.example.incidentanalyst.remediation.RemediationStep> {
+    if (json.isNullOrBlank()) return emptyList()
+    return try {
+        objectMapper.readValue(
+            json,
+            objectMapper.typeFactory.constructCollectionType(
+                List::class.java,
+                com.example.incidentanalyst.remediation.RemediationStep::class.java
+            )
+        )
+    } catch (e: Exception) {
+        emptyList()
+    }
+}
+
+fun serializeStructuredSteps(steps: List<com.example.incidentanalyst.remediation.RemediationStep>): String {
+    return objectMapper.writeValueAsString(steps)
+}
 
 @JvmInline
 value class DiagnosisId(val value: Long)
@@ -49,7 +73,7 @@ fun DiagnosisEntity.toDomain(): Diagnosis =
         incidentId = IncidentId(requireNotNull(incident?.id)),
         rootCause = suggestedRootCause,
         steps = remediationSteps.split("\n").filter { it.isNotBlank() },
-        structuredSteps = emptyList(), // TODO: Parse from structuredSteps JSON
+        structuredSteps = parseStructuredSteps(structuredSteps),
         confidence = Confidence.valueOf(confidence),
         verification = when (verification) {
             "VERIFIED" -> DiagnosisVerification.VerifiedByHuman
@@ -66,7 +90,7 @@ fun Diagnosis.toEntity(incidentEntity: IncidentEntity): DiagnosisEntity =
         incident = incidentEntity,
         suggestedRootCause = rootCause,
         remediationSteps = steps.joinToString("\n"),
-        structuredSteps = null, // TODO: Serialize structuredSteps to JSON
+        structuredSteps = serializeStructuredSteps(structuredSteps),
         confidence = confidence.name,
         verification = when (verification) {
             DiagnosisVerification.VerifiedByHuman -> "VERIFIED"

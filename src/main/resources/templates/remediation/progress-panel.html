@@ -1,0 +1,98 @@
+{#if progress.status.name == 'COMPLETED' || progress.status.name == 'FAILED'}
+  <!-- Stop polling when completed or failed -->
+  <section class="rounded-2xl border border-emerald-100 bg-white/90 p-6 shadow-sm">
+    <div class="flex items-center gap-3 mb-4">
+      <div class="text-2xl">
+        {#if progress.status.name == 'COMPLETED'}✅{:else}❌{/if}
+      </div>
+      <div>
+        <h3 class="text-lg font-semibold text-slate-900">
+          Remediation {#if progress.status.name == 'COMPLETED'}Complete{:else}Failed{/if}
+        </h3>
+        <p class="text-sm text-slate-500">
+          {progress.steps.size} steps executed
+        </p>
+      </div>
+    </div>
+
+    <div class="space-y-3">
+      {#for step in progress.steps}
+        <div class="flex items-start gap-3 p-3 rounded-lg bg-slate-50">
+          <div class="mt-0.5">
+            {#if step.status.name == 'COMPLETED'}
+              <span class="badge badge-success badge-sm">✓</span>
+            {:else if step.status.name == 'FAILED'}
+              <span class="badge badge-error badge-sm">✗</span>
+            {:else if step.status.name == 'IN_PROGRESS'}
+              <span class="badge badge-info badge-sm animate-pulse">●</span>
+            {:else}
+              <span class="badge badge-ghost badge-sm">○</span>
+            {/if}
+          </div>
+          <div class="flex-1">
+            <p class="text-sm font-medium text-slate-700">{step.description}</p>
+            {#if step.outcome}
+              <p class="text-xs text-slate-500 mt-1">{step.outcome}</p>
+            {/if}
+          </div>
+        </div>
+      {/for}
+    </div>
+
+    {#if progress.errorMessage}
+      <div class="mt-4 p-3 rounded-lg bg-red-50 border border-red-200">
+        <p class="text-sm text-red-700">{progress.errorMessage}</p>
+      </div>
+    {/if}
+  </section>
+{:else}
+  <!-- Polling active - refresh every 2 seconds -->
+  <section 
+    class="rounded-2xl border border-blue-100 bg-white/90 p-6 shadow-sm"
+    hx-get="/incidents/{progress.incidentId}/remediation/progress"
+    hx-trigger="every 2s"
+    hx-swap="outerHTML"
+  >
+    <div class="flex items-center gap-3 mb-4">
+      <div class="loading loading-spinner loading-md text-primary"></div>
+      <div>
+        <h3 class="text-lg font-semibold text-slate-900">Remediation in Progress</h3>
+        <p class="text-sm text-slate-500">
+          Step {progress.currentStepIndex + 1} of {progress.steps.size}
+        </p>
+      </div>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="w-full bg-slate-200 rounded-full h-2 mb-4">
+      <div 
+        class="bg-blue-500 h-2 rounded-full transition-all duration-500"
+        style="width: {((progress.currentStepIndex + 1).toFloat() / progress.steps.size.toFloat() * 100).toInt()}%"
+      ></div>
+    </div>
+
+    <div class="space-y-3">
+      {#for step in progress.steps}
+        <div class="flex items-start gap-3 p-3 rounded-lg {#if step.status.name == 'IN_PROGRESS'}bg-blue-50 border border-blue-200{:else}bg-slate-50{/if}">
+          <div class="mt-0.5">
+            {#if step.status.name == 'COMPLETED'}
+              <span class="badge badge-success badge-sm">✓</span>
+            {:else if step.status.name == 'FAILED'}
+              <span class="badge badge-error badge-sm">✗</span>
+            {:else if step.status.name == 'IN_PROGRESS'}
+              <span class="badge badge-info badge-sm animate-pulse">●</span>
+            {:else}
+              <span class="badge badge-ghost badge-sm">○</span>
+            {/if}
+          </div>
+          <div class="flex-1">
+            <p class="text-sm font-medium text-slate-700">{step.description}</p>
+            {#if step.outcome}
+              <p class="text-xs text-slate-500 mt-1">{step.outcome}</p>
+            {/if}
+          </div>
+        </div>
+      {/for}
+    </div>
+  </section>
+{/if}

@@ -3,6 +3,7 @@ package com.example.incidentanalyst.incident
 import com.example.incidentanalyst.agent.IncidentDiagnosisService
 import com.example.incidentanalyst.diagnosis.DiagnosisService
 import com.example.incidentanalyst.home.DiagnosisStepViewModel
+import com.example.incidentanalyst.remediation.RemediationService
 import com.example.incidentanalyst.web.toDaisyColor
 import com.example.incidentanalyst.web.toDisplayString
 import com.example.incidentanalyst.web.toRelativeTime
@@ -23,7 +24,8 @@ class IncidentResource(
     private val incidentService: IncidentService,
     private val diagnosisService: DiagnosisService,
     private val incidentDiagnosisService: IncidentDiagnosisService,
-    private val embeddingService: com.example.incidentanalyst.rag.EmbeddingService
+    private val embeddingService: com.example.incidentanalyst.rag.EmbeddingService,
+    private val remediationService: RemediationService
 ) {
 
     @Inject
@@ -33,6 +35,10 @@ class IncidentResource(
     @Inject
     @Location("incident/list.html")
     lateinit var listTemplate: Template
+
+    @Inject
+    @Location("remediation/progress-panel.html")
+    lateinit var progressTemplate: Template
 
     @GET
     @Produces(MediaType.TEXT_HTML, MediaType.APPLICATION_JSON)
@@ -182,15 +188,21 @@ class IncidentResource(
     @Blocking
     fun remediate(@PathParam("id") id: Long): Response {
         val incidentId = IncidentId(id)
-        // In a real app, this would trigger actual remediation actions
-        // For now, we'll just resolve the incident
-        return incidentService.updateStatus(incidentId, IncidentStatus.Resolved).fold(
-            ifLeft = { Response.status(Response.Status.NOT_FOUND).build() },
-            ifRight = { incident ->
-                val viewModel = mapToDetailViewModel(incident)
-                Response.ok(detailTemplate.data("incident", viewModel)).build()
-            }
-        )
+        
+        // Get the diagnosis for this incident
+        val diagnosis = diagnosisService.getByIncidentId(id)
+            ?: return Response.status(Response.Status.BAD_REQUEST)
+                .entity("No diagnosis found for incident")
+                .build()
+
+        // Start remediation execution
+        remediationService.executeAllSteps(incidentId, diagnosis)
+
+        // Return the progress panel for HTMX polling
+        val progress = remediationService.getProgress(incidentId)
+            ?: return Response.serverError().build()
+
+        return Response.ok(progressTemplate.data("progress", progress)).build()
     }
 
     @POST
