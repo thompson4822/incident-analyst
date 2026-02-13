@@ -52,7 +52,11 @@
             <select name="source" class="select select-sm select-bordered border-slate-200 bg-white text-slate-700">
               <option value="Source" {#if !model.filters.source || model.filters.source == "Source"}selected{/if}>Source</option>
               <option value="CloudWatch" {#if model.filters.source == "CloudWatch"}selected{/if}>CloudWatch</option>
+              <option value="Sentry" {#if model.filters.source == "Sentry"}selected{/if}>Sentry</option>
+              <option value="GitHub" {#if model.filters.source == "GitHub"}selected{/if}>GitHub</option>
+              <option value="PagerDuty" {#if model.filters.source == "PagerDuty"}selected{/if}>PagerDuty</option>
               <option value="Manual" {#if model.filters.source == "Manual"}selected{/if}>Manual</option>
+              <option value="Webhook" {#if model.filters.source == "Webhook"}selected{/if}>Custom/Webhook</option>
             </select>
           </div>
 
