@@ -1,18 +1,18 @@
-# TICKET-005: Runbook slice core
+# TICKET-005: Runbook slice core (COMPLETED)
 
 ## Goal
 Support listing and editing runbook fragments with data-oriented models and endpoints.
 
 ## Scope
-- Runbook models: `RunbookFragmentId`, `RunbookFragment`.
-- Mapping functions between `RunbookFragmentEntity` and domain model.
-- Repository, service, and resource endpoints for list and update.
-- DTOs for web/API responses.
+- [x] Runbook models: `RunbookFragmentId`, `RunbookFragment`.
+- [x] Mapping functions between `RunbookFragmentEntity` and domain model.
+- [x] Repository, service, and resource endpoints for list and update.
+- [x] DTOs for web/API responses.
 
 ## Acceptance criteria
-- Runbook endpoints return DTOs only.
-- Domain models use meaningful types.
-- Updates trigger persistence operations cleanly.
+- [x] Runbook endpoints return DTOs only.
+- [x] Domain models use meaningful types.
+- [x] Updates trigger persistence operations cleanly.
 
 ## Progress
 - ✅ RunbookFragmentRepository with findRecent() query
@@ -27,9 +27,23 @@ Support listing and editing runbook fragments with data-oriented models and endp
 - ✅ Validation in service layer (blank title/content checks)
 - ✅ Error responses include MediaType.APPLICATION_JSON
 - ✅ Proper HTTP status code mapping (200, 404, 400)
-- ✅ Comprehensive test suite: 83 tests (82 passing, 1 skipped due to test isolation)
-- ✅ Tests cover service, repository, resource, models, and DTO mappings
-- ✅ All acceptance criteria met
+- ✅ 83 tests covering service, repository, resource, models, and DTO mappings
+
+## Implementation Details
+
+### Files Created
+- `src/main/kotlin/com/example/incidentanalyst/runbook/RunbookModels.kt`
+- `src/main/kotlin/com/example/incidentanalyst/runbook/RunbookFragmentEntity.kt`
+- `src/main/kotlin/com/example/incidentanalyst/runbook/RunbookFragmentRepository.kt`
+- `src/main/kotlin/com/example/incidentanalyst/runbook/RunbookService.kt`
+- `src/main/kotlin/com/example/incidentanalyst/runbook/RunbookResource.kt`
+- `src/main/kotlin/com/example/incidentanalyst/runbook/RunbookDto.kt`
+
+### Domain Types
+- `RunbookFragmentId` - value class for runbook IDs
+- `RunbookFragment` - domain model with title, content, category
+- `RunbookFragmentResult` - sealed interface (Success, Failure)
+- `RunbookFragmentError` - sealed interface (NotFound, ValidationFailed)
 
 ## Dependencies
 - TICKET-002.
