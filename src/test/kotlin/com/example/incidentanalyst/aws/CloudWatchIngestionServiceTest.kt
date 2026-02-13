@@ -3,6 +3,7 @@ package com.example.incidentanalyst.aws
 import com.example.incidentanalyst.common.Either
 import com.example.incidentanalyst.incident.Incident
 import com.example.incidentanalyst.incident.IncidentService
+import com.example.incidentanalyst.incident.IncidentSource
 import com.example.incidentanalyst.incident.Severity
 import io.quarkus.test.InjectMock
 import io.quarkus.test.junit.QuarkusTest
@@ -107,7 +108,7 @@ class CloudWatchIngestionServiceTest {
         val result = cloudWatchIngestionService.mapAlarmToIncident(alarm)
 
         assertNotNull(result)
-        assertEquals("cloudwatch", result!!.source)
+        assertEquals(IncidentSource.CloudWatch, result!!.source)
         assertEquals("TestAlarm", result.title)
     }
 

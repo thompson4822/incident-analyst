@@ -1,6 +1,7 @@
 package com.example.incidentanalyst.training
 
 import com.example.incidentanalyst.incident.IncidentId
+import com.example.incidentanalyst.incident.IncidentSource
 import com.example.incidentanalyst.incident.Severity
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
@@ -34,7 +35,7 @@ data class TrainingIncidentResponseDto(
 fun toTrainingIncidentResponseDto(incident: com.example.incidentanalyst.incident.Incident) =
     TrainingIncidentResponseDto(
         id = incident.id.value,
-        source = incident.source,
+        source = incident.source.displayName,
         title = incident.title,
         description = incident.description,
         severity = incident.severity,

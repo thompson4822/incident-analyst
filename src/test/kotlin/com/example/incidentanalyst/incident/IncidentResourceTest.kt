@@ -17,6 +17,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.*
 import java.time.Instant
+import com.example.incidentanalyst.incident.IncidentSource
 
 @QuarkusTest
 class IncidentResourceTest {
@@ -45,7 +46,7 @@ class IncidentResourceTest {
         val testTimestamp = Instant.now()
         val incident = Incident(
             id = IncidentId(testId),
-            source = "monitoring",
+            source = IncidentSource.Webhook("monitoring"),
             title = "High CPU usage",
             description = "CPU usage exceeded 90%",
             severity = Severity.HIGH,
@@ -136,7 +137,7 @@ class IncidentResourceTest {
         val testTimestamp = Instant.now()
         val incident = Incident(
             id = IncidentId(testId),
-            source = "alerting",
+            source = IncidentSource.Webhook("alerting"),
             title = "Database connection failed",
             description = "Connection pool exhausted",
             severity = Severity.CRITICAL,
@@ -168,7 +169,7 @@ class IncidentResourceTest {
         val testTimestamp = Instant.now()
         val incident = Incident(
             id = IncidentId(testId),
-            source = "support",
+            source = IncidentSource.Webhook("support"),
             title = "User report issue",
             description = "Users reporting slow page loads",
             severity = Severity.MEDIUM,
@@ -197,7 +198,7 @@ class IncidentResourceTest {
         val testTimestamp = Instant.now()
         val incident = Incident(
             id = IncidentId(testId),
-            source = "monitoring",
+            source = IncidentSource.Webhook("monitoring"),
             title = "Disk space warning",
             description = "Disk usage at 85%",
             severity = Severity.LOW,
@@ -226,7 +227,7 @@ class IncidentResourceTest {
         val testTimestamp = Instant.now()
         val incident = Incident(
             id = IncidentId(testId),
-            source = "custom-monitor",
+            source = IncidentSource.Webhook("custom-monitor"),
             title = "Custom alert",
             description = "Detailed description of the incident",
             severity = Severity.CRITICAL,
@@ -261,7 +262,7 @@ class IncidentResourceTest {
         val testTimestamp = Instant.now()
         val incident = Incident(
             id = IncidentId(testId),
-            source = "test",
+            source = IncidentSource.Webhook("test"),
             title = "Large diagnosisId",
             description = "Description",
             severity = Severity.HIGH,
@@ -292,7 +293,7 @@ class IncidentResourceTest {
             val testTimestamp = Instant.now()
             val incident = Incident(
                 id = IncidentId(testId),
-                source = "test",
+                source = IncidentSource.Webhook("test"),
                 title = "Severity test",
                 description = "Description",
                 severity = severity,
@@ -323,7 +324,7 @@ class IncidentResourceTest {
         val testTimestamp = Instant.now()
         val incident = Incident(
             id = IncidentId(testId),
-            source = "test",
+            source = IncidentSource.Webhook("test"),
             title = "Zero diagnosisId",
             description = "Description",
             severity = Severity.MEDIUM,
@@ -377,7 +378,7 @@ class IncidentResourceTest {
         val resolutionText = "Fixed the issue"
         val incident = Incident(
             id = IncidentId(testId),
-            source = "monitoring",
+            source = IncidentSource.Webhook("monitoring"),
             title = "High CPU usage",
             description = "CPU usage exceeded 90%",
             severity = Severity.HIGH,
@@ -406,7 +407,7 @@ class IncidentResourceTest {
         val resolutionText = "Fixed via restart"
         val incident = Incident(
             id = IncidentId(testId),
-            source = "test",
+            source = IncidentSource.Webhook("test"),
             title = "Test",
             description = "Test",
             severity = Severity.HIGH,

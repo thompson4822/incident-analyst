@@ -3,6 +3,7 @@ package com.example.incidentanalyst.rag
 import com.example.incidentanalyst.common.Either
 import com.example.incidentanalyst.incident.Incident
 import com.example.incidentanalyst.incident.IncidentId
+import com.example.incidentanalyst.incident.IncidentSource
 import com.example.incidentanalyst.incident.IncidentStatus
 import com.example.incidentanalyst.incident.Severity
 import com.example.incidentanalyst.runbook.RunbookFragment
@@ -42,7 +43,7 @@ class RetrievalServiceTest {
         // Arrange
         val incident = Incident(
             id = IncidentId(1L),
-            source = "cloudwatch",
+            source = IncidentSource.CloudWatch,
             title = "Database connection failed",
             description = "Connection pool exhausted",
             severity = Severity.HIGH,
@@ -71,7 +72,7 @@ class RetrievalServiceTest {
         // Arrange
         val incident = Incident(
             id = IncidentId(1L),
-            source = "cloudwatch",
+            source = IncidentSource.CloudWatch,
             title = "Test",
             description = "Test description",
             severity = Severity.HIGH,
@@ -96,7 +97,7 @@ class RetrievalServiceTest {
         // Arrange
         val incident = Incident(
             id = IncidentId(1L),
-            source = "cloudwatch",
+            source = IncidentSource.CloudWatch,
             title = "   ",
             description = "   ",
             severity = Severity.HIGH,
@@ -145,7 +146,7 @@ class RetrievalServiceTest {
         // Arrange
         val incident = Incident(
             id = IncidentId(1L),
-            source = "test",
+            source = IncidentSource.Webhook("test"),
             title = "Test",
             description = "Test",
             severity = Severity.HIGH,

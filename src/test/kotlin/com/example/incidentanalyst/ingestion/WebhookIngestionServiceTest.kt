@@ -4,6 +4,7 @@ import com.example.incidentanalyst.common.Either
 import com.example.incidentanalyst.incident.Incident
 import com.example.incidentanalyst.incident.IncidentId
 import com.example.incidentanalyst.incident.IncidentService
+import com.example.incidentanalyst.incident.IncidentSource
 import com.example.incidentanalyst.incident.IncidentStatus
 import com.example.incidentanalyst.incident.Severity
 import io.quarkus.test.InjectMock
@@ -163,7 +164,7 @@ class WebhookIngestionServiceTest {
 
         val createdIncident = Incident(
             id = IncidentId(42L),
-            source = "sentry",
+            source = IncidentSource.Sentry,
             title = "Sentry Error",
             description = "NPE in service",
             severity = Severity.CRITICAL,
@@ -179,7 +180,7 @@ class WebhookIngestionServiceTest {
         assertTrue(result.isRight())
         val success = (result as Either.Right).value as WebhookIngestionSuccess.IncidentCreated
         assertEquals(42L, success.id)
-        assertEquals("sentry", success.source)
+        assertEquals(IncidentSource.Sentry, success.source)
         assertEquals("Sentry Error", success.title)
     }
 
@@ -194,7 +195,7 @@ class WebhookIngestionServiceTest {
 
         val createdIncident = Incident(
             id = IncidentId(1L),
-            source = "sentry",
+            source = IncidentSource.Sentry,
             title = "Test",
             description = "Description",
             severity = Severity.MEDIUM,
@@ -221,7 +222,7 @@ class WebhookIngestionServiceTest {
 
         val createdIncident = Incident(
             id = IncidentId(1L),
-            source = "sentry",
+            source = IncidentSource.Sentry,
             title = "Test",
             description = "Description",
             severity = Severity.CRITICAL,

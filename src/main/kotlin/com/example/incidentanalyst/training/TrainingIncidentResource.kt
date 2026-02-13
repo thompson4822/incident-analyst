@@ -2,6 +2,7 @@ package com.example.incidentanalyst.training
 
 import com.example.incidentanalyst.incident.Incident
 import com.example.incidentanalyst.incident.IncidentService
+import com.example.incidentanalyst.incident.IncidentSource
 import com.example.incidentanalyst.incident.IncidentStatus
 import com.example.incidentanalyst.incident.IncidentId
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -43,7 +44,7 @@ class TrainingIncidentResource @Inject constructor(
 
         val incident = Incident(
             id = IncidentId(0),
-            source = request.source,
+            source = IncidentSource.parse(request.source),
             title = request.title,
             description = buildDescription(request.description, request.stackTrace),
             severity = request.severity,

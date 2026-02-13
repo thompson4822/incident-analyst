@@ -3,6 +3,7 @@ package com.example.incidentanalyst.ingestion
 import com.example.incidentanalyst.incident.Incident
 import com.example.incidentanalyst.incident.IncidentId
 import com.example.incidentanalyst.incident.IncidentService
+import com.example.incidentanalyst.incident.IncidentSource
 import com.example.incidentanalyst.incident.IncidentStatus
 import com.example.incidentanalyst.incident.Severity
 import io.quarkus.test.InjectMock
@@ -40,7 +41,7 @@ class WebhookIngestionResourceTest {
         
         val createdIncident = Incident(
             id = IncidentId(1L),
-            source = "sentry",
+            source = IncidentSource.Sentry,
             title = request.title!!,
             description = request.description!!,
             severity = Severity.CRITICAL,
@@ -67,7 +68,7 @@ class WebhookIngestionResourceTest {
             title == request.title &&
             description == request.description &&
             severity == Severity.CRITICAL &&
-            source == "sentry"
+            source == IncidentSource.Sentry
         })
     }
 
@@ -126,7 +127,7 @@ class WebhookIngestionResourceTest {
         
         val createdIncident = Incident(
             id = IncidentId(1L),
-            source = "test",
+            source = IncidentSource.Webhook("test"),
             title = request.title!!,
             description = request.description!!,
             severity = Severity.MEDIUM,
@@ -341,7 +342,7 @@ class WebhookIngestionResourceTest {
 
         val createdIncident = Incident(
             id = IncidentId(1L),
-            source = "test",
+            source = IncidentSource.Webhook("test"),
             title = request.title!!,
             description = request.description!!,
             severity = expectedSeverity,
@@ -389,7 +390,7 @@ class WebhookIngestionResourceTest {
 
         val createdIncident = Incident(
             id = IncidentId(1L),
-            source = "test",
+            source = IncidentSource.Webhook("test"),
             title = request.title!!,
             description = request.description!!,
             severity = expectedSeverity,
@@ -495,7 +496,7 @@ class WebhookIngestionResourceTest {
 
         val createdIncident = Incident(
             id = IncidentId(1L),
-            source = request.source!!,
+            source = IncidentSource.Webhook(request.source!!),
             title = request.title!!,
             description = request.description!!,
             severity = Severity.CRITICAL,
@@ -519,7 +520,7 @@ class WebhookIngestionResourceTest {
         verify(incidentService).create(argThat {
             title == request.title &&
             description == request.description &&
-            source == request.source
+            source.displayName == request.source
         })
     }
 
@@ -537,7 +538,7 @@ class WebhookIngestionResourceTest {
 
         val createdIncident = Incident(
             id = IncidentId(1L),
-            source = "test",
+            source = IncidentSource.Webhook("test"),
             title = request.title!!,
             description = longDescription,
             severity = Severity.MEDIUM,
@@ -577,7 +578,7 @@ class WebhookIngestionResourceTest {
 
         val createdIncident = Incident(
             id = IncidentId(1L),
-            source = "test",
+            source = IncidentSource.Webhook("test"),
             title = maxTitle,
             description = request.description!!,
             severity = Severity.MEDIUM,
@@ -615,7 +616,7 @@ class WebhookIngestionResourceTest {
 
         val createdIncident = Incident(
             id = IncidentId(1L),
-            source = maxSource,
+            source = IncidentSource.Webhook(maxSource),
             title = request.title!!,
             description = request.description!!,
             severity = Severity.MEDIUM,
@@ -637,7 +638,7 @@ class WebhookIngestionResourceTest {
             .body("message", equalTo("Incident created"))
 
         verify(incidentService).create(argThat {
-            source == maxSource
+            source.displayName == maxSource
         })
     }
 

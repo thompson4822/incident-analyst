@@ -2,6 +2,7 @@ package com.example.incidentanalyst.training
 
 import com.example.incidentanalyst.incident.Incident
 import com.example.incidentanalyst.incident.IncidentId
+import com.example.incidentanalyst.incident.IncidentSource
 import com.example.incidentanalyst.incident.IncidentStatus
 import com.example.incidentanalyst.incident.IncidentService
 import com.example.incidentanalyst.incident.Severity
@@ -30,7 +31,7 @@ class TrainingIncidentResourceTest {
         val timestamp = Instant.now()
         val incident = Incident(
             id = IncidentId(0),
-            source = "training",
+            source = IncidentSource.Training,
             title = "High CPU Usage",
             description = "CPU threshold exceeded 95%\n\nStack Trace:\nat com.example.Service.process(Service.kt:45)",
             severity = Severity.HIGH,
@@ -68,7 +69,7 @@ class TrainingIncidentResourceTest {
         val timestamp = Instant.now()
         val incident = Incident(
             id = IncidentId(0),
-            source = "training",
+            source = IncidentSource.Training,
             title = "Memory Warning",
             description = "Memory usage above threshold",
             severity = Severity.MEDIUM,
@@ -104,7 +105,7 @@ class TrainingIncidentResourceTest {
         val timestamp = Instant.now()
         val incident = Incident(
             id = IncidentId(0),
-            source = "training",
+            source = IncidentSource.Training,
             title = "Application Error",
             description = "Null pointer exception\n\nStack Trace:\nat com.example.Main.main(Main.kt:10)\n\tat java.lang.Thread.run(Thread.java:834)",
             severity = Severity.LOW,

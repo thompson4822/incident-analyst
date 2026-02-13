@@ -5,6 +5,7 @@ import com.example.incidentanalyst.incident.Incident
 import com.example.incidentanalyst.incident.IncidentEntity
 import com.example.incidentanalyst.incident.IncidentId
 import com.example.incidentanalyst.incident.IncidentRepository
+import com.example.incidentanalyst.incident.IncidentSource
 import com.example.incidentanalyst.incident.IncidentStatus
 import com.example.incidentanalyst.incident.Severity
 import com.example.incidentanalyst.incident.toEntity
@@ -53,7 +54,7 @@ class IncidentServiceIntegrationTest {
         val timestamp = Instant.now()
         val incident = Incident(
             id = IncidentId(0),
-            source = "test",
+            source = IncidentSource.Webhook("test"),
             title = "Test Incident",
             description = "Test Description",
             severity = Severity.HIGH,
@@ -76,7 +77,7 @@ class IncidentServiceIntegrationTest {
         val timestamp = Instant.now()
         val incident = Incident(
             id = IncidentId(0),
-            source = "test",
+            source = IncidentSource.Webhook("test"),
             title = "Test Incident",
             description = "Test Description",
             severity = Severity.HIGH,

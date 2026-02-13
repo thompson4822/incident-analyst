@@ -17,10 +17,11 @@ class IncidentService(
         query: String?,
         status: String?,
         severity: String?,
-        source: String?,
+        source: IncidentSource?,
         limit: Int = 50
     ): List<Incident> =
-        incidentRepository.findByFilters(query, status, severity, source, limit).map { it.toDomain() }
+        incidentRepository.findByFilters(query, status, severity, source?.toPersistenceString(), limit)
+            .map { it.toDomain() }
 
     fun getById(id: IncidentId): Either<IncidentError, Incident> =
         incidentRepository.findById(id.value)?.toDomain()?.let { incident ->

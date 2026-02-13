@@ -13,7 +13,7 @@ data class IncidentResponseDto(
 fun Incident.toResponseDto(): IncidentResponseDto =
     IncidentResponseDto(
         id = id.value,
-        source = source,
+        source = source.displayName,
         title = title,
         description = description,
         severity = severity.name,

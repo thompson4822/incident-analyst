@@ -44,7 +44,9 @@ class IncidentResource(
         @QueryParam("severity") severity: String?,
         @QueryParam("source") source: String?
     ): Response {
-        val incidents = incidentService.search(query, status, severity, source)
+        // Parse source string to IncidentSource, or null if not provided/invalid
+        val incidentSource = source?.let { IncidentSource.parse(it) }
+        val incidents = incidentService.search(query, status, severity, incidentSource)
         
         // Check if client prefers HTML
         val acceptHeader = headers.acceptableMediaTypes
@@ -235,7 +237,7 @@ class IncidentResource(
                 id = incident.id.value,
                 title = incident.title,
                 shortDescription = incident.description.take(100),
-                source = incident.source,
+                source = incident.source.displayName,
                 severity = incident.severity.name,
                 severityColor = incident.severity.toDaisyColor(),
                 status = incident.status.toDisplayString(),
@@ -273,7 +275,7 @@ class IncidentResource(
             id = incident.id.value,
             title = incident.title,
             description = incident.description,
-            source = incident.source,
+            source = incident.source.displayName,
             severity = incident.severity.name,
             severityColor = incident.severity.toDaisyColor(),
             status = incident.status.toDisplayString(),
@@ -303,8 +305,8 @@ class IncidentResource(
         )
     }
 
-    private fun extractTags(description: String, source: String): List<String> {
-        val tags = mutableListOf(source.uppercase())
+    private fun extractTags(description: String, source: IncidentSource): List<String> {
+        val tags = mutableListOf(source.displayName.uppercase())
         if (description.contains("latency", ignoreCase = true)) tags.add("LATENCY")
         if (description.contains("error", ignoreCase = true)) tags.add("ERROR")
         if (description.contains("timeout", ignoreCase = true)) tags.add("TIMEOUT")
@@ -348,7 +350,7 @@ class IncidentResource(
         events.add(TimelineEventViewModel(
             timestamp = incident.createdAt.toRelativeTime(),
             action = "Incident Created",
-            description = "Detected via ${incident.source}",
+            description = "Detected via ${incident.source.displayName}",
             color = "error",
             icon = "plus"
         ))

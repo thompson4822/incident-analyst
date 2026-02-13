@@ -3,6 +3,7 @@ package com.example.incidentanalyst.aws
 import com.example.incidentanalyst.incident.Incident
 import com.example.incidentanalyst.incident.IncidentId
 import com.example.incidentanalyst.incident.IncidentService
+import com.example.incidentanalyst.incident.IncidentSource
 import com.example.incidentanalyst.incident.IncidentStatus
 import com.example.incidentanalyst.incident.Severity
 import io.quarkus.test.InjectMock
@@ -214,7 +215,7 @@ class CloudWatchTestDataGeneratorServiceTest {
         val result = generatorService.mapAlarmToIncident(alarm)
 
         assertTrue(result != null)
-        assertEquals("cloudwatch", result!!.source)
+        assertEquals(IncidentSource.CloudWatch, result!!.source)
         assertEquals("CPUAlarm", result.title)
         assertEquals(Severity.HIGH, result.severity)
     }
@@ -259,7 +260,7 @@ class CloudWatchTestDataGeneratorServiceTest {
 
     private fun baseIncident(timestamp: Instant, id: IncidentId): Incident = Incident(
         id = id,
-        source = "cloudwatch",
+        source = IncidentSource.CloudWatch,
         title = "Test Alarm",
         description = "Test description",
         severity = Severity.HIGH,

@@ -2,6 +2,7 @@ package com.example.incidentanalyst.ingestion
 
 import com.example.incidentanalyst.incident.Incident
 import com.example.incidentanalyst.incident.IncidentId
+import com.example.incidentanalyst.incident.IncidentSource
 import com.example.incidentanalyst.incident.IncidentStatus
 import com.example.incidentanalyst.incident.Severity
 import jakarta.validation.constraints.NotBlank
@@ -26,7 +27,7 @@ data class GenericIncidentRequestDto(
         val now = Instant.now()
         return Incident(
             id = IncidentId(0),
-            source = source ?: "",
+            source = IncidentSource.parse(source ?: "unknown"),
             title = title ?: "",
             description = description ?: "",
             severity = try {

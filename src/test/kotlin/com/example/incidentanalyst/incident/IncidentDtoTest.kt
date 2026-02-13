@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.time.Instant
+import com.example.incidentanalyst.incident.IncidentSource
 
 class IncidentDtoTest {
 
@@ -12,7 +13,7 @@ class IncidentDtoTest {
         // Arrange
         val incident = Incident(
             id = IncidentId(123L),
-            source = "monitoring",
+            source = IncidentSource.Webhook("monitoring"),
             title = "Test incident",
             description = "Test description",
             severity = Severity.HIGH,
@@ -38,7 +39,7 @@ class IncidentDtoTest {
         // Arrange
         val incident = Incident(
             id = IncidentId(456L),
-            source = "alerting",
+            source = IncidentSource.Webhook("alerting"),
             title = "Acknowledged incident",
             description = "Description",
             severity = Severity.MEDIUM,
@@ -59,7 +60,7 @@ class IncidentDtoTest {
         // Arrange
         val incident = Incident(
             id = IncidentId(789L),
-            source = "support",
+            source = IncidentSource.Webhook("support"),
             title = "Resolved incident",
             description = "Description",
             severity = Severity.LOW,
@@ -81,7 +82,7 @@ class IncidentDtoTest {
         val diagnosisId = 999L
         val incident = Incident(
             id = IncidentId(321L),
-            source = "monitoring",
+            source = IncidentSource.Webhook("monitoring"),
             title = "Diagnosed incident",
             description = "Description",
             severity = Severity.CRITICAL,
@@ -103,7 +104,7 @@ class IncidentDtoTest {
         val diagnosisId = 456789L
         val incident = Incident(
             id = IncidentId(555L),
-            source = "test",
+            source = IncidentSource.Webhook("test"),
             title = "Test diagnosed",
             description = "Description",
             severity = Severity.HIGH,
@@ -127,7 +128,7 @@ class IncidentDtoTest {
         val diagnosisId = 0L
         val incident = Incident(
             id = IncidentId(666L),
-            source = "test",
+            source = IncidentSource.Webhook("test"),
             title = "Zero diagnosisId",
             description = "Description",
             severity = Severity.MEDIUM,
@@ -149,7 +150,7 @@ class IncidentDtoTest {
         val diagnosisId = -1L
         val incident = Incident(
             id = IncidentId(777L),
-            source = "test",
+            source = IncidentSource.Webhook("test"),
             title = "Negative diagnosisId",
             description = "Description",
             severity = Severity.LOW,
@@ -171,7 +172,7 @@ class IncidentDtoTest {
         val diagnosisId = 999999999L
         val incident = Incident(
             id = IncidentId(888L),
-            source = "test",
+            source = IncidentSource.Webhook("test"),
             title = "Large diagnosisId",
             description = "Description",
             severity = Severity.CRITICAL,
@@ -201,7 +202,7 @@ class IncidentDtoTest {
         severities.forEach { (severityEnum, severityString) ->
             val incident = Incident(
                 id = IncidentId(1000L + severityEnum.ordinal),
-                source = "test",
+                source = IncidentSource.Webhook("test"),
                 title = "Severity test",
                 description = "Description",
                 severity = severityEnum,
@@ -223,7 +224,7 @@ class IncidentDtoTest {
         // Arrange
         val incident = Incident(
             id = IncidentId(999L),
-            source = "custom-source",
+            source = IncidentSource.Webhook("custom-source"),
             title = "Custom Title",
             description = "Custom Description",
             severity = Severity.HIGH,
@@ -249,7 +250,7 @@ class IncidentDtoTest {
         // Arrange
         val incident = Incident(
             id = IncidentId(111L),
-            source = "monitoring-system",
+            source = IncidentSource.Webhook("monitoring-system"),
             title = "High Memory Usage",
             description = "Memory usage exceeded 95% threshold",
             severity = Severity.CRITICAL,
@@ -276,7 +277,7 @@ class IncidentDtoTest {
         val diagnosisId = 12345L
         val incident = Incident(
             id = IncidentId(222L),
-            source = "alerting-system",
+            source = IncidentSource.Webhook("alerting-system"),
             title = "Database Connection Failed",
             description = "Application unable to connect to primary database",
             severity = Severity.CRITICAL,
@@ -303,7 +304,7 @@ class IncidentDtoTest {
         val testTimestamp = Instant.now()
         val incident = Incident(
             id = IncidentId(333L),
-            source = "test-source",
+            source = IncidentSource.Webhook("test-source"),
             title = "Test Title",
             description = "Test Description",
             severity = Severity.MEDIUM,

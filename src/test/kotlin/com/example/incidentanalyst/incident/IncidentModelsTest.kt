@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.time.Instant
+import com.example.incidentanalyst.incident.IncidentSource
 
 class IncidentModelsTest {
 
@@ -27,7 +28,7 @@ class IncidentModelsTest {
         // Assert
         assertTrue(domain.status is IncidentStatus.Open)
         assertEquals(123L, domain.id.value)
-        assertEquals("monitoring", domain.source)
+        assertEquals("monitoring", domain.source.displayName)
         assertEquals("Test incident", domain.title)
         assertEquals(Severity.HIGH, domain.severity)
     }
@@ -330,7 +331,7 @@ class IncidentModelsTest {
 
         // Assert
         assertEquals(999L, domain.id.value)
-        assertEquals("custom-source", domain.source)
+        assertEquals("custom-source", domain.source.displayName)
         assertEquals("Custom Title", domain.title)
         assertEquals("Custom Description", domain.description)
         assertEquals(Severity.HIGH, domain.severity)
@@ -410,7 +411,7 @@ class IncidentModelsTest {
         // Arrange
         val incident = Incident(
             id = IncidentId(123L),
-            source = "monitoring",
+            source = IncidentSource.Webhook("monitoring"),
             title = "Test incident",
             description = "Test description",
             severity = Severity.HIGH,
@@ -436,7 +437,7 @@ class IncidentModelsTest {
         // Arrange
         val incident = Incident(
             id = IncidentId(456L),
-            source = "alerting",
+            source = IncidentSource.Webhook("alerting"),
             title = "Acknowledged incident",
             description = "Description",
             severity = Severity.MEDIUM,
@@ -457,7 +458,7 @@ class IncidentModelsTest {
         // Arrange
         val incident = Incident(
             id = IncidentId(789L),
-            source = "support",
+            source = IncidentSource.Webhook("support"),
             title = "Resolved incident",
             description = "Description",
             severity = Severity.LOW,
@@ -479,7 +480,7 @@ class IncidentModelsTest {
         val diagnosisId = 456L
         val incident = Incident(
             id = IncidentId(321L),
-            source = "monitoring",
+            source = IncidentSource.Webhook("monitoring"),
             title = "Diagnosed incident",
             description = "Description",
             severity = Severity.CRITICAL,
@@ -509,7 +510,7 @@ class IncidentModelsTest {
         severities.forEach { (severityEnum, severityString) ->
             val incident = Incident(
                 id = IncidentId(1000L + severityEnum.ordinal),
-                source = "test",
+                source = IncidentSource.Webhook("test"),
                 title = "Severity test",
                 description = "Description",
                 severity = severityEnum,
@@ -533,7 +534,7 @@ class IncidentModelsTest {
         val updatedTime = Instant.now()
         val incident = Incident(
             id = IncidentId(888L),
-            source = "test",
+            source = IncidentSource.Webhook("test"),
             title = "Timestamp test",
             description = "Description",
             severity = Severity.HIGH,
@@ -557,7 +558,7 @@ class IncidentModelsTest {
         val updatedTime = Instant.now()
         val incident = Incident(
             id = IncidentId(999L),
-            source = "custom-source",
+            source = IncidentSource.Webhook("custom-source"),
             title = "Custom Title",
             description = "Custom Description",
             severity = Severity.HIGH,

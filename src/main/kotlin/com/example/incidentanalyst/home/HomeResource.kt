@@ -123,7 +123,7 @@ class HomeResource {
                 statusColor = incident.status.toDaisyColor(),
                 createdAt = incident.createdAt.toRelativeTime(),
                 updatedAt = incident.updatedAt.toRelativeTime(),
-                source = incident.source,
+                source = incident.source.displayName,
                 hasDiagnosis = incident.status is com.example.incidentanalyst.incident.IncidentStatus.Diagnosed,
                 diagnosisProgress = generateDiagnosisProgress(incident.status),
                 verified = diagnosis?.verification is com.example.incidentanalyst.diagnosis.DiagnosisVerification.VerifiedByHuman
@@ -171,7 +171,7 @@ class HomeResource {
 
     private fun com.example.incidentanalyst.incident.Incident.toHomeItemViewModel() = HomeIncidentItemViewModel(
         id = id.value,
-        source = source,
+        source = source.displayName,
         severity = severity.name,
         severityColor = severity.toDaisyColor(),
         title = title,
@@ -179,7 +179,7 @@ class HomeResource {
         status = status.toDisplayString(),
         statusColor = status.toDaisyColor(),
         updatedAt = updatedAt.toRelativeTime(),
-        tags = listOf(source.uppercase(), if (description.contains("memory", true)) "MEMORY" else "ERROR")
+        tags = listOf(source.displayName.uppercase(), if (description.contains("memory", true)) "MEMORY" else "ERROR")
     )
 
     private fun generateDiagnosisProgress(status: com.example.incidentanalyst.incident.IncidentStatus): List<DiagnosisStepViewModel> {

@@ -1,5 +1,7 @@
 package com.example.incidentanalyst.ingestion
 
+import com.example.incidentanalyst.incident.IncidentSource
+
 sealed interface WebhookIngestionError {
     data object Unauthorized : WebhookIngestionError
     data class ValidationError(val errors: List<String>) : WebhookIngestionError
@@ -7,5 +9,5 @@ sealed interface WebhookIngestionError {
 }
 
 sealed interface WebhookIngestionSuccess {
-    data class IncidentCreated(val id: Long, val source: String, val title: String) : WebhookIngestionSuccess
+    data class IncidentCreated(val id: Long, val source: IncidentSource, val title: String) : WebhookIngestionSuccess
 }

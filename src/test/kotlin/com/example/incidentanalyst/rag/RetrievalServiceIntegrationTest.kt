@@ -7,6 +7,7 @@ import com.example.incidentanalyst.diagnosis.DiagnosisRepository
 import com.example.incidentanalyst.incident.Incident
 import com.example.incidentanalyst.incident.IncidentId
 import com.example.incidentanalyst.incident.IncidentRepository
+import com.example.incidentanalyst.incident.IncidentSource
 import com.example.incidentanalyst.incident.IncidentStatus
 import com.example.incidentanalyst.incident.Severity
 import com.example.incidentanalyst.incident.toEntity
@@ -61,7 +62,7 @@ class RetrievalServiceIntegrationTest {
         val timestamp = Instant.now()
         val incident1 = Incident(
             id = IncidentId(0),
-            source = "cloudwatch",
+            source = IncidentSource.CloudWatch,
             title = "Database connection failed " + System.currentTimeMillis(),
             description = "Connection pool exhausted due to high load",
             severity = Severity.HIGH,
@@ -80,7 +81,7 @@ class RetrievalServiceIntegrationTest {
         // Retrieve
         val queryIncident = Incident(
             id = IncidentId(0),
-            source = "cloudwatch",
+            source = IncidentSource.CloudWatch,
             title = incident1.title,
             description = incident1.description,
             severity = Severity.HIGH,
@@ -140,7 +141,7 @@ class RetrievalServiceIntegrationTest {
         val timestamp = Instant.now()
         val incident = Incident(
             id = IncidentId(0),
-            source = "cloudwatch",
+            source = IncidentSource.CloudWatch,
             title = "Database connection failed " + System.currentTimeMillis(),
             description = "Connection pool exhausted",
             severity = Severity.HIGH,
@@ -171,7 +172,7 @@ class RetrievalServiceIntegrationTest {
         // Act - Retrieve using a similar query
         val queryIncident = Incident(
             id = IncidentId(0),
-            source = "test",
+            source = IncidentSource.Webhook("test"),
             title = incident.title,
             description = incident.description,
             severity = Severity.HIGH,

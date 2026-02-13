@@ -1,6 +1,7 @@
 package com.example.incidentanalyst.aws
 
 import com.example.incidentanalyst.incident.IncidentService
+import com.example.incidentanalyst.incident.IncidentSource
 import com.example.incidentanalyst.incident.Severity
 import jakarta.enterprise.context.ApplicationScoped
 import org.jboss.logging.Logger
@@ -195,7 +196,7 @@ class CloudWatchTestDataGeneratorService(
 
         return com.example.incidentanalyst.incident.Incident(
             id = com.example.incidentanalyst.incident.IncidentId(0),
-            source = "cloudwatch",
+            source = IncidentSource.CloudWatch,
             title = alarmName,
             description = buildAlarmDescription(alarm),
             severity = severity,

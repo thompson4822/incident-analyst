@@ -5,6 +5,7 @@ import com.example.incidentanalyst.incident.Incident
 import com.example.incidentanalyst.incident.IncidentEntity
 import com.example.incidentanalyst.incident.IncidentId
 import com.example.incidentanalyst.incident.IncidentRepository
+import com.example.incidentanalyst.incident.IncidentSource
 import com.example.incidentanalyst.incident.IncidentStatus
 import com.example.incidentanalyst.incident.Severity
 import com.example.incidentanalyst.incident.toEntity
@@ -65,7 +66,7 @@ class EmbeddingServiceIntegrationTest {
         val timestamp = Instant.now()
         val incident = Incident(
             id = IncidentId(0),
-            source = "cloudwatch",
+            source = IncidentSource.CloudWatch,
             title = "Database connection failed " + System.currentTimeMillis(),
             description = "Connection pool exhausted due to high load",
             severity = Severity.HIGH,
@@ -115,7 +116,7 @@ class EmbeddingServiceIntegrationTest {
         val timestamp = Instant.now()
         val incident = Incident(
             id = IncidentId(0),
-            source = "cloudwatch",
+            source = IncidentSource.CloudWatch,
             title = "CPU high " + System.currentTimeMillis(),
             description = "CPU exceeded threshold",
             severity = Severity.HIGH,

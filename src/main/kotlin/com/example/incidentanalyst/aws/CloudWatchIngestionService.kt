@@ -3,6 +3,7 @@ package com.example.incidentanalyst.aws
 import com.example.incidentanalyst.common.Either
 import com.example.incidentanalyst.incident.Incident
 import com.example.incidentanalyst.incident.IncidentService
+import com.example.incidentanalyst.incident.IncidentSource
 import com.example.incidentanalyst.incident.IncidentStatus
 import com.example.incidentanalyst.incident.Severity
 import io.quarkus.arc.profile.IfBuildProfile
@@ -121,7 +122,7 @@ class CloudWatchIngestionService(
 
         return Incident(
             id = com.example.incidentanalyst.incident.IncidentId(0), // Placeholder ID, will be assigned on persist
-            source = "cloudwatch",
+            source = IncidentSource.CloudWatch,
             title = alarmName,
             description = buildAlarmDescription(alarm),
             severity = severity,

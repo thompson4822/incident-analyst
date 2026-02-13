@@ -40,7 +40,7 @@ class WebhookIngestionService(
 
             log.infof(
                 "Successfully ingested incident via webhook. source=%s, title=%s, id=%d",
-                created.source,
+                created.source.displayName,
                 created.title,
                 created.id.value
             )
